@@ -56,7 +56,9 @@ class Server extends Thread{
 				new ClientHandler(socket).start();
 			}
 		}catch (IOException ioe){
-			//Do nothing, since this exception is coming from the BufferedReader's reset method call.
+			/*Do nothing, since this exception is coming from the BufferedReader's reset method call.
+			 * and doesn't bother the functionality.
+			 */
 			System.out.print("");
 		}catch(Exception e){
 			System.out.println(e.getMessage());
