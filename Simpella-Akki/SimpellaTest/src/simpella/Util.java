@@ -1,3 +1,5 @@
+package simpella;
+
 public class Util {
 
 	public static String CONNECT = "SIMPELLA CONNECT/0.6 \r \n";

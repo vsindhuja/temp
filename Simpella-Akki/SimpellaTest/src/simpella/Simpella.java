@@ -1,3 +1,5 @@
+package simpella;
+
 import java.io.*; 
 import java.net.*; 
 import java.util.*;
@@ -200,7 +202,7 @@ class Client extends Thread
 	}
 
 	public void handShake(){
-		if(TCPHandshake.handshake){
+		if(Simpella.handshake){
 			Socket tempClientSock = sock; 
 			String inputline = "";
 			try {
@@ -220,12 +222,12 @@ class Client extends Thread
 								System.out.println(inputline);
 							}
 							//clientOutput.println("Done");
-							TCPHandshake.handshake=false;
+							Simpella.handshake=false;
 							System.out.println("Echoer>>");
 							//clientInputLine.reset();
 						}
 						if(inputline.equalsIgnoreCase("Successful")){
-							TCPHandshake.handshake=false;
+							Simpella.handshake=false;
 							clientInputLine.reset();
 						}
 					}
@@ -237,7 +239,7 @@ class Client extends Thread
 	}
 }
 
-public class TCPHandshake
+public class Simpella
 {
 	static int connCount = 0;
 
@@ -403,9 +405,9 @@ public class TCPHandshake
 								clientOutput.println("Disconnected from "+tempClientSock.getLocalSocketAddress());
 								hmClients.get(conID).getSock().close();
 								hmClients.remove(conID);
-								TCPHandshake.connCount = TCPHandshake.connCount - 1;
+								Simpella.connCount = Simpella.connCount - 1;
 								//Also stop the thread that was associated with it and delete it from the HashMan.
-								TCPHandshake.threadMap.remove(conID);
+								Simpella.threadMap.remove(conID);
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
