@@ -2,19 +2,13 @@ package simpella;
 
 public class MessageFormat {
 	
-	String messageID = "";
+	byte[] messageID = new byte[16]; //Will Store the GUID.
 	String messageType = "";
 	int TTL = 0;
 	int hops = 0;
 	int payloadLen = 0;
 	String payload = "";
 	
-	public String getMessageID() {
-		return messageID;
-	}
-	public void setMessageID(String messageID) {
-		this.messageID = messageID;
-	}
 	public String getMessageType() {
 		return messageType;
 	}
@@ -45,5 +39,4 @@ public class MessageFormat {
 	public void setPayload(String payload) {
 		this.payload = payload;
 	}
-	
 }
