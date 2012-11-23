@@ -142,7 +142,7 @@ class Client extends Thread
 							}
 							//clientOutput.println("Done");
 							simpella.handshake=false;
-							System.out.print("Simpella>>");
+							//System.out.print("Simpella>>");
 							//clientInputLine.reset();
 						}
 						if(inputline.equalsIgnoreCase("Successful")){

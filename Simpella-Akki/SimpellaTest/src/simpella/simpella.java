@@ -40,7 +40,7 @@ class Server extends Thread{
 						Boolean connAcceptStatus = true;
 						if(connAcceptStatus){
 							System.out.println(" ");
-							if(incomingMess.equals(Util.CONNECTION_ACK))
+							if(incomingMess.equalsIgnoreCase(Util.CONNECTION_ACK))
 							{
 								System.out.println(""+incomingMess);
 							}
