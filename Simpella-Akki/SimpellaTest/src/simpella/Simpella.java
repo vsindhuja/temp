@@ -236,7 +236,11 @@ public class Simpella
 
 						threadMap.put(connCount, t);
 						t.start();
-
+						
+						Util ut = new Util();
+						ut.generateGUID();
+						ut.guidToRawString();
+						
 					} catch (IndexOutOfBoundsException ie){
 						System.out.println(" Input needs more parameters. ");
 					} catch (BindException be){
@@ -249,7 +253,7 @@ public class Simpella
 						System.out.println(e.getMessage());
 					} 
 				}else if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
-						if(!(input.substring(10)).isEmpty()){
+						if(!(input.substring(10)).equals("")){
 							int conID = Integer.parseInt(input.substring(10).trim());
 							try {
 								//Close the socket opened against the connection ID and remove it from the HashMap.
