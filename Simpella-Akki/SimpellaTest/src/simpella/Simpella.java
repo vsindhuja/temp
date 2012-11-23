@@ -3,6 +3,9 @@ package simpella;
 import java.io.*; 
 import java.net.*; 
 import java.util.*;
+import simpella.Util;
+import simpella.MessageFormat;
+import simpella.Client;
 
 class Server extends Thread{
 
@@ -30,7 +33,6 @@ class Server extends Thread{
 		try{
 			while(true){
 				socket = tcpservsock.accept();  // accept connection
-
 				PrintStream output = new PrintStream(socket.getOutputStream());
 				BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				String incomingMess = "";
@@ -109,14 +111,11 @@ public class Simpella
 	@SuppressWarnings("static-access")
 	public static void main(String[] args)
 	{
-
 		int tcpport = Integer.parseInt(args[0]);
 
 		try{
-
 			Thread t = new Server(tcpport);
 			t.start();
-
 		}
 		catch (IOException e)
 		{
@@ -126,8 +125,8 @@ public class Simpella
 		String ipAddr;
 		int tcpPort = 0000;
 		String input;
-		//Create sockets
 
+		//Create sockets
 		while(true){
 			System.out.print("Echoer>>");
 			if(scan.hasNext()){
@@ -249,8 +248,7 @@ public class Simpella
 					} catch (IOException e) {
 						System.out.println(e.getMessage());
 					} 
-				}else
-					if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
+				}else if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
 						if(!(input.substring(10)).isEmpty()){
 							int conID = Integer.parseInt(input.substring(10).trim());
 							try {
