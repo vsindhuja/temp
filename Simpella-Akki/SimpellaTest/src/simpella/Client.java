@@ -131,16 +131,14 @@ class Client extends Thread
 					while((inputline=clientInputLine.readLine())!=null){
 						if(inputline.startsWith("SIMPELLA/0.6")){
 							if(inputline.substring(13,16).equals("200")){
-								//System.out.println("Receieved "+ inputline +" from server, Connection ACCEPTED.");
 								System.out.println(inputline);
+								clientInputLine.reset();
 							}else if(inputline.substring(13,16).equals("503")){
-								//System.out.println("Receieved "+ inputline +" from server, Connection REFUSED.");
 								System.out.println(inputline);
+								clientInputLine.reset();
 							}
-							//clientOutput.println("Done");
 							Simpella.handshake=false;
 							System.out.println("Echoer>>");
-							//clientInputLine.reset();
 						}
 						if(inputline.equalsIgnoreCase("Successful")){
 							Simpella.handshake=false;
