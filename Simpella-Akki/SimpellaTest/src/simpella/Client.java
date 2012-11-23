@@ -118,7 +118,7 @@ class Client extends Thread
 	}
 
 	public void handShake(){
-		if(Simpella.handshake){
+		if(simpella.handshake){
 			Socket tempClientSock = sock; 
 			String inputline = "";
 			try {
@@ -126,24 +126,27 @@ class Client extends Thread
 				BufferedReader clientInputLine = null;
 				clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
 				clientInputLine.mark(0);
-				System.out.println("Initiating handshake by sending connection request to client");
+				//System.out.println("Initiating handshake by sending connection request to client");
 				clientOutput.println("SIMPELLA CONNECT/0.6 \r \n");
 					while((inputline=clientInputLine.readLine())!=null){
 						if(inputline.startsWith("SIMPELLA/0.6")){
 							if(inputline.substring(13,16).equals("200")){
 								//System.out.println("Receieved "+ inputline +" from server, Connection ACCEPTED.");
 								System.out.println(inputline);
+								clientOutput.println(Util.CONNECTION_ACK);
+								clientInputLine.reset();
 							}else if(inputline.substring(13,16).equals("503")){
 								//System.out.println("Receieved "+ inputline +" from server, Connection REFUSED.");
 								System.out.println(inputline);
+								clientInputLine.reset();
 							}
 							//clientOutput.println("Done");
-							Simpella.handshake=false;
-							System.out.println("Echoer>>");
+							simpella.handshake=false;
+							System.out.print("Simpella>>");
 							//clientInputLine.reset();
 						}
 						if(inputline.equalsIgnoreCase("Successful")){
-							Simpella.handshake=false;
+							simpella.handshake=false;
 							clientInputLine.reset();
 						}
 					}
