@@ -96,7 +96,7 @@ class ClientHandler extends Thread{
 }
 
 
-public class Simpella
+public class simpella
 {
 	static int connCount = 0;
 
@@ -262,9 +262,9 @@ public class Simpella
 								clientOutput.println("Disconnected from "+tempClientSock.getLocalSocketAddress());
 								hmClients.get(conID).getSock().close();
 								hmClients.remove(conID);
-								Simpella.connCount = Simpella.connCount - 1;
+								connCount = connCount - 1;
 								//Also stop the thread that was associated with it and delete it from the HashMan.
-								Simpella.threadMap.remove(conID);
+								threadMap.remove(conID);
 							} catch (IOException e) {
 								e.printStackTrace();
 							}

@@ -118,7 +118,7 @@ class Client extends Thread
 	}
 
 	public void handShake(){
-		if(Simpella.handshake){
+		if(simpella.handshake){
 			Socket tempClientSock = sock; 
 			String inputline = "";
 			try {
@@ -137,11 +137,11 @@ class Client extends Thread
 								System.out.println(inputline);
 								clientInputLine.reset();
 							}
-							Simpella.handshake=false;
+							simpella.handshake=false;
 							System.out.println("Echoer>>");
 						}
 						if(inputline.equalsIgnoreCase("Successful")){
-							Simpella.handshake=false;
+							simpella.handshake=false;
 							clientInputLine.reset();
 						}
 					}
