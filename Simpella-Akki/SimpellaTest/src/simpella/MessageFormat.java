@@ -1,14 +1,14 @@
 package simpella;
 
 public class MessageFormat {
-	
+
 	String messageID = "";
 	String messageType = "";
 	int TTL = 0;
 	int hops = 0;
 	int payloadLen = 0;
 	String payload = "";
-	
+
 	public String getMessageID() {
 		return messageID;
 	}
@@ -45,5 +45,5 @@ public class MessageFormat {
 	public void setPayload(String payload) {
 		this.payload = payload;
 	}
-	
+
 }

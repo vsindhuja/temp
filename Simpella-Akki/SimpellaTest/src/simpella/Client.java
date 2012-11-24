@@ -12,28 +12,30 @@ class Client extends Thread
 	Socket sock;
 	String ipAddress;
 	String hostName;
-	int localPort;
-	int remotePort;
+	int tcpPort;
+	int dloadPort;
 	String message;
 	Integer conID;
+	Boolean incoming;
+	Boolean handshake;
 	DataInputStream dis;
 	PrintStream os;
 	boolean send = false; 
 
-	public int getLocalPort() {
-		return localPort;
+	public int gettcpPort() {
+		return tcpPort;
 	}
 
-	public void setLocalPort(int localPort) {
-		this.localPort = localPort;
+	public void settcpPort(int localPort) {
+		this.tcpPort = localPort;
 	}
 
-	public int getRemotePort() {
-		return remotePort;
+	public int getdloadPort() {
+		return dloadPort;
 	}
 
-	public void setRemotePort(int remotePort) {
-		this.remotePort = remotePort;
+	public void setdloadPort(int remotePort) {
+		this.dloadPort = remotePort;
 	}
 
 	public Integer getConID() {
@@ -42,6 +44,18 @@ class Client extends Thread
 
 	public void setConID(Integer conID) {
 		this.conID = conID;
+	}
+
+	public Boolean getIncoming() {
+		return incoming;
+	}
+
+	public void setIncoming(Boolean incom) {
+		this.incoming = incom;
+	}
+
+	public Boolean getHandshake() {
+		return handshake;
 	}
 
 	public DataInputStream getDis() {
@@ -118,42 +132,32 @@ class Client extends Thread
 	}
 
 	public void handShake(){
-		if(simpella.handshake){
-			Socket tempClientSock = sock; 
-			String inputline = "";
-			try {
-				PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
-				BufferedReader clientInputLine = null;
-				clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
-				clientInputLine.mark(0);
-				//System.out.println("Initiating handshake by sending connection request to client");
-				clientOutput.println("SIMPELLA CONNECT/0.6 \r \n");
-					while((inputline=clientInputLine.readLine())!=null){
-						if(inputline.startsWith("SIMPELLA/0.6")){
-							if(inputline.substring(13,16).equals("200")){
-								//System.out.println("Receieved "+ inputline +" from server, Connection ACCEPTED.");
-								System.out.println(inputline);
-								clientOutput.println(Util.CONNECTION_ACK);
-								clientInputLine.reset();
-							}else if(inputline.substring(13,16).equals("503")){
-								//System.out.println("Receieved "+ inputline +" from server, Connection REFUSED.");
-								System.out.println(inputline);
-								clientInputLine.reset();
-							}
-							//clientOutput.println("Done");
-							simpella.handshake=false;
-							//System.out.print("Simpella>>");
-							//clientInputLine.reset();
-						}
-						if(inputline.equalsIgnoreCase("Successful")){
-							simpella.handshake=false;
-							clientInputLine.reset();
-						}
+		Socket tempClientSock = sock; 
+		String inputline = "";
+		try {
+			PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
+			BufferedReader clientInputLine = null;
+			clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
+			clientInputLine.mark(0);
+			//System.out.println("Initiating handshake by sending connection request to client");
+			clientOutput.println("SIMPELLA CONNECT/0.6 \r \n");
+			while((inputline=clientInputLine.readLine())!=null){
+				if(inputline.startsWith("SIMPELLA/0.6")){
+					if(inputline.substring(13,16).equals("200")){
+						handshake = true;
+						System.out.println(inputline);
+						clientOutput.println(Util.CONNECTION_ACK);
+						clientInputLine.reset();
+					}else if(inputline.substring(13,16).equals("503")){
+						handshake=false;
+						System.out.println(inputline);
+						clientInputLine.reset();
 					}
-			} catch (IOException e) {
-				//Do nothing, since this exception is coming from the BufferedReader's reset method call.
-				System.out.print("");
+				}
 			}
+		} catch (IOException e) {
+			//Do nothing, since this exception is coming from the BufferedReader's reset method call.
+			System.out.print("");
 		}
 	}
 }

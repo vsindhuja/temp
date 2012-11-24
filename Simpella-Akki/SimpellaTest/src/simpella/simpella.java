@@ -36,27 +36,50 @@ class Server extends Thread{
 				String incomingMess = "";
 				while((incomingMess = input.readLine())!=null){
 					if(incomingMess.startsWith("SIMPELLA CONNECT/0.6")){
-						//Check for existing connection count to be introduced.
-						Boolean connAcceptStatus = true;
+						//Checking for existing connenctions
+						int count = 0;
+						Boolean connAcceptStatus = false;
+						for(int i=0;i<=simpella.hmClients.size();i++)
+						{
+							Client tempInfo = simpella.hmClients.get(i);
+
+							if(tempInfo!=null)
+							{
+								if (tempInfo.getIncoming())
+								{
+									count ++;
+									System.out.println(count);
+								}
+							}
+						}
+						if(count<3)
+						{
+							connAcceptStatus = true;
+
+						}
 						if(connAcceptStatus){
 							System.out.println(" ");
 							if(incomingMess.equalsIgnoreCase(Util.CONNECTION_ACK))
 							{
 								System.out.println(""+incomingMess);
+
+								Client newCli = new Client();
+								newCli.setSock(socket);
+								newCli.setIpAddress(socket.getRemoteSocketAddress().toString());
+								simpella.connCount = simpella.connCount + 1;
+								newCli.setConID(simpella.connCount);
+								newCli.setIncoming(false);
+								newCli.settcpPort(socket.getLocalPort());
+								simpella.hmClients.put(simpella.connCount, newCli);
+
 							}
-							//System.out.println(" Received " + incomingMess + " from client, sending response." + Util.CONNECTION_ACCEPTED);
+
 							output.println(Util.CONNECTION_ACCEPTED);
 							System.out.print("Simpella>>");
 						}else{ 
 							System.out.println(" ");
-							//System.out.println(" Received " + incomingMess + " from client, sending response." + Util.CONNECTION_REFUSED);
 							output.println(Util.CONNECTION_REFUSED);
 						}
-					}
-					else if(incomingMess.equalsIgnoreCase("done")){
-						System.out.println("Handshake SUCCESSFUL!!!");
-						System.out.print("Simpella>>");
-						output.println("Successful");
 					}
 				}
 				new ClientHandler(socket).start();
@@ -107,8 +130,7 @@ public class simpella
 	static Scanner scan = new Scanner(System.in);
 
 	public static HashMap<Integer, Thread> threadMap = new HashMap<Integer, Thread>();
-
-	static HashMap<Integer,Client> hmClients = new HashMap<Integer, Client>();
+	public static HashMap<Integer,Client> hmClients = new HashMap<Integer, Client>();
 
 	public static Boolean handshake = false;
 
@@ -117,7 +139,7 @@ public class simpella
 	{
 
 		int tcpport = Integer.parseInt(args[0]);
-		int dport = Integer.parseInt(args[1]);
+		int dloadport = Integer.parseInt(args[1]);
 
 		try{
 			Socket sock1 = new Socket("8.8.8.8", 53);
@@ -125,7 +147,7 @@ public class simpella
 			System.out.println("Local IP:"+ipaddr);
 			System.out.println("Host Name:"+ipaddr.getLocalHost().getHostName());
 			System.out.println("Simpella Net Port: "+tcpport);
-			System.out.println("Downloading Port: "+dport);
+			System.out.println("Downloading Port: "+dloadport);
 			System.out.println("simpella version 0.6 (c) 2002-2003 XYZ");
 			System.out.println("\r\n\n");
 
@@ -161,12 +183,13 @@ public class simpella
 					try
 					{ 
 						Socket sock = new Socket("8.8.8.8", 53);
-						System.out.println (String.format("%10s%10s%10s%10s","IP","Hostname","TCP port"));
-						System.out.println ("-------------------------------------------------------------------------------------------------");
+						System.out.println (String.format("%20s%20s%20s%20s","IP","Hostname","TCP port","Download Port"));
+						System.out.println ("-------------------------------------------------------------------------");
 						InetAddress ipaddr = sock.getLocalAddress();
-						System.out.print((String.format("%10s",ipaddr)));
-						System.out.print((String.format("%10s",ipaddr.getLocalHost().getHostName())));
-						System.out.println((String.format("%10d",tcpport)));
+						System.out.print((String.format("%-20s",ipaddr)));
+						System.out.print((String.format("%20s",ipaddr.getLocalHost().getHostName())));
+						System.out.println((String.format("%20d",tcpport)));
+						System.out.println((String.format("%20d",dloadport)));
 					}
 					catch (IOException e) {
 						System.out.println(e.getMessage());
@@ -174,19 +197,20 @@ public class simpella
 				}
 
 				else if(input.substring(0,4).equalsIgnoreCase("show")){
-					System.out.println (String.format("%10s%10s%20s%20s%20s","conn. ID","IP","Hostname","local port","remote port"));
-					System.out.println ("-------------------------------------------------------------------------------------------------");
+					System.out.println (String.format("%10s%10s%20s","conn. ID","Host","TCP port"));
+					System.out.println ("-------------------------------------------------------------");
 					for(int i=0;i<=hmClients.size();i++){
 						Client tempInfo = hmClients.get(i);
 						if(tempInfo!=null){
-							System.out.print(String.format("%-10d",i));
+							System.out.print(String.format("%-10d",tempInfo.getConID()));
 							System.out.print((String.format("%10s",tempInfo.getIpAddress())));
-							System.out.print((String.format("%20s",tempInfo.getHostName())));
-							System.out.print((String.format("%20d",tempInfo.getLocalPort())));
-							System.out.println((String.format("%20d",tempInfo.getRemotePort())));
+							System.out.println((String.format("%10d",tempInfo.gettcpPort())));
 
 						}
 					}
+
+					System.out.println("\r\n");
+
 				}else if(input.substring(0,6).equalsIgnoreCase("sendto")){
 					String[] splitArr ;
 					try
@@ -249,19 +273,26 @@ public class simpella
 						tcpPort = Integer.parseInt(splitArr[1].trim());
 						Socket sock = new Socket(ipAddr, tcpPort);
 						//For each socket we create and start off a new thread. Take-id and go! #russelpeters
-						connCount = connCount + 1;
 						Client newCli = new Client();
 						newCli.setSock(sock);
-						newCli.setIpAddress(ipAddr);
-						newCli.setConID(connCount);
-						newCli.setLocalPort(tcpPort);
-						handshake = true;
 						newCli.handShake();
-						hmClients.put(connCount, newCli);
-						Thread t = new Thread(newCli);
-
-						threadMap.put(connCount, t);
-						t.start();
+						//if(newCli.getHandshake())
+						//{
+							connCount = connCount + 1;
+							newCli.setIpAddress(ipAddr);
+							newCli.setConID(connCount);
+							newCli.settcpPort(tcpPort);
+							newCli.setIncoming(true);
+							newCli.setdloadPort(dloadport);
+							hmClients.put(connCount, newCli);
+							Thread t = new Thread(newCli);
+							threadMap.put(connCount, t);
+							t.start();
+						//}
+						//else
+						//{
+							//System.out.println("Try again another time");
+						//}
 
 					} catch (IndexOutOfBoundsException ie){
 						System.out.println(" Input needs more parameters. ");
