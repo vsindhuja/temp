@@ -16,7 +16,6 @@ class Client extends Thread
 	int dloadPort;
 	String message;
 	Integer conID;
-	Boolean incoming;
 	Boolean handshake;
 	DataInputStream dis;
 	PrintStream os;
@@ -44,14 +43,6 @@ class Client extends Thread
 
 	public void setConID(Integer conID) {
 		this.conID = conID;
-	}
-
-	public Boolean getIncoming() {
-		return incoming;
-	}
-
-	public void setIncoming(Boolean incom) {
-		this.incoming = incom;
 	}
 
 	public Boolean getHandshake() {
@@ -139,7 +130,6 @@ class Client extends Thread
 			BufferedReader clientInputLine = null;
 			clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
 			clientInputLine.mark(0);
-			//System.out.println("Initiating handshake by sending connection request to client");
 			clientOutput.println("SIMPELLA CONNECT/0.6 \r \n");
 			while((inputline=clientInputLine.readLine())!=null){
 				if(inputline.startsWith("SIMPELLA/0.6")){

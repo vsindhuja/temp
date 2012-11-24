@@ -6,5 +6,9 @@ public class Util {
 	public static String CONNECTION_ACCEPTED = "SIMPELLA/0.6 200 OK";
 	public static String CONNECTION_REFUSED = "SIMPELLA/0.6 503 Exceeded Connection Capacity";
 	public static String CONNECTION_ACK = "SIMPELLA CONNECT/0.6 Initiator thanking for accepting connection";
+	
+	static int outCount = 0;
+	static int inCount = 0;
+
 
 }

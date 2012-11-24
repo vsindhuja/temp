@@ -8,6 +8,8 @@ class Server extends Thread {
 
 	public static ServerSocket tcpservsock;
 	public Socket socket;
+	public static int count = 0;
+
 
 	public Server(Socket socket) {
 		this.socket = socket;
@@ -30,21 +32,14 @@ class Server extends Thread {
 				PrintStream output = new PrintStream(socket.getOutputStream());
 				BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				String incomingMess = "";
-				int count = 0;
 				Boolean connAcceptStatus = false;
-				for (int i = 0; i <= simpella.hmClients.size(); i++) {
-					Client tempInfo = simpella.hmClients.get(i);
 
-					if (tempInfo != null) {
-						if (tempInfo.getIncoming()) {
-							count++;
-							System.out.println(count);
-						}
-					}
-				}
-				if (count < 3) {
+				if(Util.inCount<3)
+				{
 					connAcceptStatus = true;
+					Util.inCount ++;
 				}
+
 				if (connAcceptStatus) {
 					try{
 						input.mark(0);
@@ -55,13 +50,12 @@ class Server extends Thread {
 								System.out.println(" ");
 								if (incomingMess.equalsIgnoreCase(Util.CONNECTION_ACK)) {
 									System.out.println("" + incomingMess);
-
+									System.out.print("Simpella>>");
 									Client newCli = new Client();
 									newCli.setSock(socket);
 									newCli.setIpAddress(socket.getRemoteSocketAddress().toString());
 									simpella.connCount = simpella.connCount + 1;
 									newCli.setConID(simpella.connCount);
-									newCli.setIncoming(false);
 									newCli.settcpPort(socket.getLocalPort());
 									simpella.hmClients.put(simpella.connCount,newCli);
 									input.reset();
@@ -82,6 +76,9 @@ class Server extends Thread {
 						 */
 						System.out.println("");
 					}
+				}else {
+					System.out.println(" ");
+					output.println(Util.CONNECTION_REFUSED);
 				}
 				new ClientHandler(socket).start();
 			}
@@ -215,7 +212,7 @@ public class simpella {
 							splitArr = input.substring(7).split(" ");
 							int port = Integer.parseInt(splitArr[1]);
 							InetAddress IPAddress = InetAddress
-							.getByName(splitArr[0]);
+									.getByName(splitArr[0]);
 							String message = "";
 							for (int i = 2; i < splitArr.length; i++) {
 								message = splitArr[2] + " ";
@@ -251,7 +248,7 @@ public class simpella {
 						System.out.println("Thread state ::: "
 								+ (threadMap.get(conID)).getState());
 						Socket tempClientSock = (hmClients.get(conID))
-						.getSock();
+								.getSock();
 						try {
 							PrintStream clientOutput = new PrintStream(
 									tempClientSock.getOutputStream());
@@ -283,23 +280,19 @@ public class simpella {
 						Client newCli = new Client();
 						newCli.setSock(sock);
 						newCli.handShake();
-						// if(newCli.getHandshake())
-						// {
-						connCount = connCount + 1;
-						newCli.setIpAddress(ipAddr);
-						newCli.setConID(connCount);
-						newCli.settcpPort(tcpPort);
-						newCli.setIncoming(true);
-						newCli.setdloadPort(dloadport);
-						hmClients.put(connCount, newCli);
-						Thread t = new Thread(newCli);
-						threadMap.put(connCount, t);
-						t.start();
-						// }
-						// else
-						// {
-						// System.out.println("Try again another time");
-						// }
+						if(newCli.getHandshake())
+						{
+							connCount = connCount + 1;
+							newCli.setIpAddress(ipAddr);
+							newCli.setConID(connCount);
+							newCli.settcpPort(tcpPort);
+							Util.inCount++;
+							newCli.setdloadPort(dloadport);
+							hmClients.put(connCount, newCli);
+							Thread t = new Thread(newCli);
+							threadMap.put(connCount, t);
+							t.start();
+						}
 
 					} catch (IndexOutOfBoundsException ie) {
 						System.out.println(" Input needs more parameters. ");
@@ -318,12 +311,12 @@ public class simpella {
 						.equalsIgnoreCase("disconnect")) {
 					if (!(input.substring(10)).equals("")) {
 						int conID = Integer
-						.parseInt(input.substring(10).trim());
+								.parseInt(input.substring(10).trim());
 						try {
 							// Close the socket opened against the connection ID
 							// and remove it from the HashMap.
 							Socket tempClientSock = (hmClients.get(conID))
-							.getSock();
+									.getSock();
 							PrintStream clientOutput = new PrintStream(
 									tempClientSock.getOutputStream());
 							clientOutput.println("Disconnected from "
