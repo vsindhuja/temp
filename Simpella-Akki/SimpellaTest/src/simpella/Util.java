@@ -10,6 +10,10 @@ public class Util {
 	public static String CONNECT = "SIMPELLA CONNECT/0.6 \r \n";
 	public static String CONNECTION_ACCEPTED = "SIMPELLA/0.6 200 OK \r \n";
 	public static String CONNECTION_REFUSED = "SIMPELLA/0.6 503 Exceeded Connection Capacity \r \n";
+	public static String CONNECTION_ACK = "SIMPELLA CONNECT/0.6 Initiator thanking for accepting connection";
+	
+	static int outCount = 0;
+	static int inCount = 0;
 	
 	//Message Types 
 	public static byte PING = 0x00;
