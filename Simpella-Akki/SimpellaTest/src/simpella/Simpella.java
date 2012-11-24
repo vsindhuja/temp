@@ -3,8 +3,8 @@ package simpella;
 import java.io.*; 
 import java.net.*; 
 import java.util.*;
+
 import simpella.Util;
-import simpella.MessageFormat;
 import simpella.Client;
 
 class Server extends Thread{
@@ -208,7 +208,6 @@ public class simpella
 							System.out.println("Response from server $$$$$ " + clientInputLine.readLine());
 							//clientOutput.print(new Client());
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}else{
