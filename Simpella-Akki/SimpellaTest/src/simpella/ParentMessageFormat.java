@@ -1,6 +1,6 @@
 package simpella;
 
-public class ParentMessageFormat {
+public class ParentMessageFormat implements java.io.Serializable{
 	
 	byte[] messageID = new byte[16]; //Will Store the GUID.
 	byte messageType;				//Defined by the Message Type in Util class

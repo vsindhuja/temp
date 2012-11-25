@@ -105,13 +105,16 @@ class ClientHandler extends Thread{
 		ParentMessageFormat msg;
 		try{
 			output = new PrintStream(sock.getOutputStream());
-			input = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			input= new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			ObjectInputStream obis = new ObjectInputStream(sock.getInputStream());
+
 			while(true){
-				while((msg =input.getClass())!=null){
-					
-					System.out.println(line);
-					output.println("Welcome to server");
-					output.println("Received : " + line);
+				ParentMessageFormat pmf = new ParentMessageFormat();
+				while((pmf = (ParentMessageFormat)obis.readObject())!=null){
+
+					System.out.println("Hops: " + pmf.getHops() + "GUID ::: " + pmf.getGUID());
+					//output.println("Welcome to server");
+					//output.println("Received : " + line);
 				}
 			}
 		}catch(Exception e){
@@ -169,189 +172,197 @@ public class simpella {
 		// Create sockets
 
 		while (true) {
-			System.out.print("Simpella>>");
-			if (scan.hasNext()) {
-				input = scan.nextLine();
-				if (input.substring(0, 4).equalsIgnoreCase("info")) {
-					try {
-						Socket sock = new Socket("8.8.8.8", 53);
-						System.out.println(String.format("%20s%20s%20s%20s",
-								"IP", "Hostname", "TCP port", "Download Port"));
+			try{
+				System.out.print("Simpella>>");
+				if (scan.hasNext()) {
+					input = scan.nextLine();
+					if (input.substring(0, 4).equalsIgnoreCase("info")) {
+						try {
+							Socket sock = new Socket("8.8.8.8", 53);
+							System.out.println(String.format("%20s%20s%20s%20s",
+									"IP", "Hostname", "TCP port", "Download Port"));
+							System.out
+							.println("-------------------------------------------------------------------------");
+							InetAddress ipaddr = sock.getLocalAddress();
+							System.out.print((String.format("%-20s", ipaddr)));
+							System.out.print((String.format("%20s", ipaddr
+									.getLocalHost().getHostName())));
+							System.out.println((String.format("%20d", tcpport)));
+							System.out.println((String.format("%20d", dloadport)));
+						} catch (IOException e) {
+							System.out.println(e.getMessage());
+						}
+					}
+
+					else if (input.substring(0, 4).equalsIgnoreCase("show")) {
+						System.out.println(String.format("%10s%10s%20s",
+								"conn. ID", "Host", "TCP port"));
 						System.out
-						.println("-------------------------------------------------------------------------");
-						InetAddress ipaddr = sock.getLocalAddress();
-						System.out.print((String.format("%-20s", ipaddr)));
-						System.out.print((String.format("%20s", ipaddr
-								.getLocalHost().getHostName())));
-						System.out.println((String.format("%20d", tcpport)));
-						System.out.println((String.format("%20d", dloadport)));
-					} catch (IOException e) {
-						System.out.println(e.getMessage());
-					}
-				}
+						.println("-------------------------------------------------------------");
+						for (int i = 0; i <= hmClients.size(); i++) {
+							Client tempInfo = hmClients.get(i);
+							if (tempInfo != null) {
+								System.out.print(String.format("%-10d",
+										tempInfo.getConID()));
+								System.out.print((String.format("%10s",
+										tempInfo.getIpAddress())));
+								System.out.println((String.format("%10d",
+										tempInfo.gettcpPort())));
 
-				else if (input.substring(0, 4).equalsIgnoreCase("show")) {
-					System.out.println(String.format("%10s%10s%20s",
-							"conn. ID", "Host", "TCP port"));
-					System.out
-					.println("-------------------------------------------------------------");
-					for (int i = 0; i <= hmClients.size(); i++) {
-						Client tempInfo = hmClients.get(i);
-						if (tempInfo != null) {
-							System.out.print(String.format("%-10d",
-									tempInfo.getConID()));
-							System.out.print((String.format("%10s",
-									tempInfo.getIpAddress())));
-							System.out.println((String.format("%10d",
-									tempInfo.gettcpPort())));
-
-						}
-					}
-					System.out.println("\r\n");
-				}else if(input.substring(0,6).equalsIgnoreCase("sendto")){
-					String[] splitArr ;
-					try
-					{
-						if(input.substring(7)!=null){
-							splitArr = input.substring(7).split(" ");
-							int port = Integer.parseInt(splitArr[1]);
-							InetAddress IPAddress = InetAddress.getByName(splitArr[0]);
-							String message = "";
-							for(int i=2;i<splitArr.length;i++){
-								message = splitArr[2] + " ";
 							}
-							DatagramSocket clientSocket = new DatagramSocket();
-							byte[] sendData = new byte[1024];
-							sendData = message.getBytes();
-							DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-							clientSocket.send(sendPacket);
-							clientSocket.close();
-
 						}
-					}	catch (UnknownHostException e) {
-						System.out.println(e.getMessage());
-					} catch (IOException e) {
-						System.out.println(e.getMessage());
-					} 
-
-				}else if(input.substring(0,4).equalsIgnoreCase("send")){
-					String[] splitArr ;
-					if(input.substring(5)!=null){
-						splitArr = input.substring(5).split(" ");
-						int conID = Integer.parseInt(splitArr[0]);
-						String message = "";
-						for(int i=1;i<splitArr.length;i++){
-							message = splitArr[1] + " ";
-						}
-						System.out.println("Message : " + message);
-						//Call the object of Info corresponding to the conID and set the message variable value.
-						(hmClients.get(conID)).setMessage(message);
-						//System.out.println("Thread state ::: "+ (threadMap.get(conID)).getState());
-						Socket tempClientSock = (hmClients.get(conID)).getSock(); 
-						try {
-							PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
-							BufferedReader clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
-							clientOutput.println(message);
-							System.out.println("Response from server $$$$$ " + clientInputLine.readLine());
-							//clientOutput.print(new Client());
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}else{
-						System.out.println("More parameters required to run the command.");
-					}
-				}else if(input.substring(0,7).equalsIgnoreCase("Connect")){
-					try {
-						String[] splitArr = input.substring(8).split(" ");
-
-						ipAddr = splitArr[0];
-						//Trim the last PORT number from the input string.
-						tcpPort = Integer.parseInt(splitArr[1].trim());
-						Socket sock = new Socket(ipAddr, tcpPort);
-						// For each socket we create and start off a new thread.
-						// Take-id and go! #russelpeters
-						Client newCli = new Client();
-						newCli.setSock(sock);
-						newCli.handShake();
-						if(newCli.getHandshake())
+						System.out.println("\r\n");
+					}else if(input.substring(0,6).equalsIgnoreCase("sendto")){
+						String[] splitArr ;
+						try
 						{
-							connCount = connCount + 1;
-							newCli.setIpAddress(ipAddr);
-							newCli.setConID(connCount);
-							newCli.settcpPort(tcpPort);
-							Util.inCount++;
-							newCli.setdloadPort(dloadport);
-							hmClients.put(connCount, newCli);
-							Thread t = new Thread(newCli);
-							threadMap.put(connCount, t);
-							t.start();
-						}
-
-					} catch (IndexOutOfBoundsException ie) {
-						System.out.println(" Input needs more parameters. ");
-					} catch (BindException be){
-						System.out.println("Address already in use");
-					} catch (ConnectException ce){
-						System.out.println(" No listner for the port "+ tcpPort + " found. Please activate the listener.");
-					} catch (UnknownHostException e) {
-						System.out.println(e.getMessage());
-					} catch (IOException e) {
-						System.out.println(e.getMessage());
-					} 
-				}
-				else if(input.substring(0,7).equalsIgnoreCase("update")){
-
-					Util pingutil = new Util();
-					ParentMessageFormat message = new ParentMessageFormat();
-					byte[] guid;
-
-					guid =pingutil.generateGUID();	
-					message.setGUID(guid);
-					message.setMessageType(Util.PING);
-					message.setTTL(7);
-					message.setHops(0);
-					message.setPayloadLen(0);
-					message.setPayload("0");
-
-					Socket tempClientSock ;
-
-					for(int i=0;i<hmClients.size();i++)
-					{
-						try {
-							tempClientSock =  (hmClients.get(i)).getSock(); 
-							PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
-							BufferedReader clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
-							clientOutput.println(message);
-							System.out.println("Response from server $$$$$ " + clientInputLine.readLine());
-							//clientOutput.print(new Client());
+							if(input.substring(7)!=null){
+								splitArr = input.substring(7).split(" ");
+								int port = Integer.parseInt(splitArr[1]);
+								InetAddress IPAddress = InetAddress.getByName(splitArr[0]);
+								String message = "";
+								for(int i=2;i<splitArr.length;i++){
+									message = splitArr[2] + " ";
+								}
+								DatagramSocket clientSocket = new DatagramSocket();
+								byte[] sendData = new byte[1024];
+								sendData = message.getBytes();
+								DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+								clientSocket.send(sendPacket);
+								clientSocket.close();
+							}
+						}	catch (UnknownHostException e) {
+							System.out.println(e.getMessage());
 						} catch (IOException e) {
-							e.printStackTrace();
+							System.out.println(e.getMessage());
+						} 
+
+					}else if(input.substring(0,4).equalsIgnoreCase("send")){
+						String[] splitArr ;
+						if(input.substring(5)!=null){
+							splitArr = input.substring(5).split(" ");
+							int conID = Integer.parseInt(splitArr[0]);
+							String message = "";
+							for(int i=1;i<splitArr.length;i++){
+								message = splitArr[1] + " ";
+							}
+							System.out.println("Message : " + message);
+							//Call the object of Info corresponding to the conID and set the message variable value.
+							(hmClients.get(conID)).setMessage(message);
+							//System.out.println("Thread state ::: "+ (threadMap.get(conID)).getState());
+							Socket tempClientSock = (hmClients.get(conID)).getSock(); 
+							try {
+								PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
+								BufferedReader clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
+								clientOutput.println(message);
+								System.out.println("Response from server $$$$$ " + clientInputLine.readLine());
+								//clientOutput.print(new Client());
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}else{
+							System.out.println("More parameters required to run the command.");
 						}
 					}
-				}
+					else if(input.startsWith("update")){
 
-				else if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
-					if(!(input.substring(10)).equals("")){
-						int conID = Integer.parseInt(input.substring(10).trim());
-						try {
-							//Close the socket opened against the connection ID and remove it from the HashMap.
-							Socket tempClientSock = (hmClients.get(conID)).getSock();
-							PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
-							clientOutput.println("Disconnected from "+tempClientSock.getLocalSocketAddress());
-							hmClients.get(conID).getSock().close();
-							hmClients.remove(conID);
-							connCount = connCount - 1;
-							//Also stop the thread that was associated with it and delete it from the HashMan.
-							threadMap.remove(conID);
-						} catch (IOException e) {
-							e.printStackTrace();
+						Util pingutil = new Util();
+						ParentMessageFormat message = new ParentMessageFormat();
+						byte[] guid;
+
+						guid =pingutil.generateGUID();	
+						message.setGUID(guid);
+						message.setMessageType(Util.PING);
+						message.setTTL(7);
+						message.setHops(0);
+						message.setPayloadLen(0);
+						message.setPayload("0");
+
+						Socket tempClientSock ;
+
+						for(int i=0;i<=hmClients.size();i++)
+						{
+							if(hmClients.get(i)!=null){
+							try {
+								tempClientSock =  (hmClients.get(i)).getSock();
+								//Use ObjectOutputStream for sending objects.
+								ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
+								BufferedReader clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
+								clientOutput.writeObject(message);
+								System.out.println("Response from server $$$$$ " + clientInputLine.readLine());
+								//clientOutput.print(new Client());
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
 						}
 					}
-				}
+					else if(input.substring(0,7).equalsIgnoreCase("Connect")){
+						try {
+							String[] splitArr = input.substring(8).split(" ");
 
-				else {
-					System.out.println("Incorrect Input");
+							ipAddr = splitArr[0];
+							//Trim the last PORT number from the input string.
+							tcpPort = Integer.parseInt(splitArr[1].trim());
+							Socket sock = new Socket(ipAddr, tcpPort);
+							// For each socket we create and start off a new thread.
+							// Take-id and go! #russelpeters
+							Client newCli = new Client();
+							newCli.setSock(sock);
+							newCli.handShake();
+							if(newCli.getHandshake())
+							{
+								connCount = connCount + 1;
+								newCli.setIpAddress(ipAddr);
+								newCli.setConID(connCount);
+								newCli.settcpPort(tcpPort);
+								Util.inCount++;
+								newCli.setdloadPort(dloadport);
+								hmClients.put(connCount, newCli);
+								Thread t = new Thread(newCli);
+								threadMap.put(connCount, t);
+								t.start();
+							}
+
+						} catch (IndexOutOfBoundsException ie) {
+							System.out.println(" Input needs more parameters. ");
+						} catch (BindException be){
+							System.out.println("Address already in use");
+						} catch (ConnectException ce){
+							System.out.println(" No listner for the port "+ tcpPort + " found. Please activate the listener.");
+						} catch (UnknownHostException e) {
+							System.out.println(e.getMessage());
+						} catch (IOException e) {
+							System.out.println(e.getMessage());
+						} 
+					}
+					
+					else if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
+						if(!(input.substring(10)).equals("")){
+							int conID = Integer.parseInt(input.substring(10).trim());
+							try {
+								//Close the socket opened against the connection ID and remove it from the HashMap.
+								Socket tempClientSock = (hmClients.get(conID)).getSock();
+								PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
+								clientOutput.println("Disconnected from "+tempClientSock.getLocalSocketAddress());
+								hmClients.get(conID).getSock().close();
+								hmClients.remove(conID);
+								connCount = connCount - 1;
+								//Also stop the thread that was associated with it and delete it from the HashMan.
+								threadMap.remove(conID);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					}
+
+					else {
+						System.out.println("Incorrect Input");
+					}
 				}
+			}catch(StringIndexOutOfBoundsException e){
+				System.out.println("Incorrect output " + e.getMessage());
+				
 			}
 		}
 	}
