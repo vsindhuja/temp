@@ -12,6 +12,10 @@ public class ParentMessageFormat implements java.io.Serializable{
 	public byte[] getGUID() {
 		return messageID;
 	}
+	public String getStringGUID(byte[] guidMessage){
+		Util ut = new Util();
+		return ut.guidToRawString(guidMessage);
+	}
 	public void setGUID(byte[] msgid) {
 		messageID = msgid;
 	}

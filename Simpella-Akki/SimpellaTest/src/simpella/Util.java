@@ -56,7 +56,7 @@ public class Util {
 		return data;
 	}
 	
-	public String guidToRawString(){
+	public String guidToRawString(byte[] data){
 		StringBuffer guidString = new StringBuffer();
 		for(int i=0;i<data.length;i++){
 			String message = (Integer.toHexString(data[i]));
