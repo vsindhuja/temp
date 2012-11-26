@@ -9,6 +9,7 @@ import simpella.Client;
 
 class Server extends Thread{
 
+	public static HashMap<byte[],InetAddress> routetable = new HashMap<byte[], InetAddress>();
 	public static ServerSocket tcpservsock;
 	public Socket socket;
 	public static int count = 0;
@@ -57,7 +58,7 @@ class Server extends Thread{
 									System.out.print("Simpella>>");
 									Client newCli = new Client();
 									newCli.setSock(socket);
-									newCli.setIpAddress(socket.getRemoteSocketAddress().toString());
+									newCli.setIpAddress(socket.getInetAddress().toString());
 									simpella.connCount = simpella.connCount + 1;
 									newCli.setConID(simpella.connCount);
 									newCli.settcpPort(socket.getLocalPort());
@@ -102,7 +103,7 @@ class ClientHandler extends Thread{
 	}
 
 	public void run(){
-		ParentMessageFormat msg;
+
 		try{
 			output = new PrintStream(sock.getOutputStream());
 			input= new BufferedReader(new InputStreamReader(sock.getInputStream()));
@@ -112,9 +113,38 @@ class ClientHandler extends Thread{
 				ParentMessageFormat pmf = new ParentMessageFormat();
 				while((pmf = (ParentMessageFormat)obis.readObject())!=null){
 
-					System.out.println("Hops: " + pmf.getHops() + "GUID ::: " + pmf.getGUID());
-					//output.println("Welcome to server");
-					//output.println("Received : " + line);
+					// To handle the receiving pings
+					if(pmf.getMessageType() == Util.PING)
+					{
+						System.out.println("I got the GUID ::: " + pmf.getStringGUID(pmf.getGUID()));
+
+						//Checking to see if i have the ping
+						if(!Server.routetable.containsKey(pmf.getGUID()))
+						{
+							Socket tempClientSock;
+							Server.routetable.put(pmf.getGUID(), sock.getInetAddress());
+							for(int i=0;i<=simpella.hmClients.size();i++)
+							{
+								if(simpella.hmClients.get(i)!=null){
+									if(!simpella.hmClients.get(i).getIpAddress().equals(sock.getInetAddress().toString()))
+										try {
+											tempClientSock = (simpella.hmClients.get(i)).getSock();
+											//Use ObjectOutputStream for sending objects.
+											ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
+											clientOutput.writeObject(pmf);
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+								}
+							}
+						}
+						else
+						{
+							System.out.println("Already have this ping on my table");
+						}
+					}
+
+					//Check for PONG and stuff 
 				}
 			}
 		}catch(Exception e){
@@ -283,18 +313,15 @@ public class simpella {
 						for(int i=0;i<=hmClients.size();i++)
 						{
 							if(hmClients.get(i)!=null){
-							try {
-								tempClientSock =  (hmClients.get(i)).getSock();
-								//Use ObjectOutputStream for sending objects.
-								ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
-								BufferedReader clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
-								clientOutput.writeObject(message);
-								System.out.println("Response from server $$$$$ " + clientInputLine.readLine());
-								//clientOutput.print(new Client());
-							} catch (IOException e) {
-								e.printStackTrace();
+								try {
+									tempClientSock =  (hmClients.get(i)).getSock();
+									//Use ObjectOutputStream for sending objects.
+									ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
+									clientOutput.writeObject(message);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
 							}
-						}
 						}
 					}
 					else if(input.substring(0,7).equalsIgnoreCase("Connect")){
@@ -336,7 +363,7 @@ public class simpella {
 							System.out.println(e.getMessage());
 						} 
 					}
-					
+
 					else if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
 						if(!(input.substring(10)).equals("")){
 							int conID = Integer.parseInt(input.substring(10).trim());
@@ -362,7 +389,7 @@ public class simpella {
 				}
 			}catch(StringIndexOutOfBoundsException e){
 				System.out.println("Incorrect output " + e.getMessage());
-				
+
 			}
 		}
 	}
