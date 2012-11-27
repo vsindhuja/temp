@@ -316,7 +316,7 @@ public class simpella {
 								try {
 									tempClientSock =  (hmClients.get(i)).getSock();
 									//Use ObjectOutputStream for sending objects.
-									ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
+			 						ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
 									clientOutput.writeObject(message);
 								} catch (IOException e) {
 									e.printStackTrace();
