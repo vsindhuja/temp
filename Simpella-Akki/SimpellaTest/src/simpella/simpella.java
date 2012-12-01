@@ -47,13 +47,13 @@ class Server extends Thread{
 
 				if (connAcceptStatus) {
 					try{
-						input.mark(0);
+						//input.mark(0);
 						while ((incomingMess = input.readLine()) != null) {
 
 							if (incomingMess.startsWith("SIMPELLA CONNECT/0.6")) {
 								// Checking for existing connenctions
 
-								if (incomingMess.equalsIgnoreCase(Util.CONNECTION_ACK)) {
+								if (incomingMess.equalsIgnoreCase(Util.CONNECTION_ACK)){
 									System.out.println("" + incomingMess);
 									System.out.print("Simpella>>");
 									Client newCli = new Client();
@@ -107,17 +107,20 @@ class ClientHandler extends Thread{
 		try{
 			output = new PrintStream(sock.getOutputStream());
 			input= new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			ObjectInputStream obis = new ObjectInputStream(sock.getInputStream());
+			DataInputStream obis = new DataInputStream(sock.getInputStream());
 
 			while(true){
 				ParentMessageFormat pmf = new ParentMessageFormat();
-				while((pmf = (ParentMessageFormat)obis.readObject())!=null){
+				// To handle the receiving pings
+				if(obis.available()>0){
 
-					// To handle the receiving pings
-					if(pmf.getMessageType() == Util.PING)
-					{
-						System.out.println("I got the GUID ::: " + pmf.getStringGUID(pmf.getGUID()));
-
+					byte[] inputByteArray = new byte[24];
+					for(int i=0;i<=23;i++){
+						inputByteArray[i] =  (byte) obis.readUnsignedByte();
+					}
+					if(inputByteArray[16]== Util.PING){
+						pmf = Util.convertByteArrayToParentMF(inputByteArray);
+						
 						//Checking to see if i have the ping
 						if(!Server.routetable.containsKey(pmf.getGUID()))
 						{
@@ -129,9 +132,10 @@ class ClientHandler extends Thread{
 									if(!simpella.hmClients.get(i).getIpAddress().equals(sock.getInetAddress().toString()))
 										try {
 											tempClientSock = (simpella.hmClients.get(i)).getSock();
-											//Use ObjectOutputStream for sending objects.
-											ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
-											clientOutput.writeObject(pmf);
+											//Use DataOutputStream for sending objects.
+											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+											clientOutput.write(pmf.convertToByteArray());
+											clientOutput.flush();
 										} catch (IOException e) {
 											e.printStackTrace();
 										}
@@ -143,9 +147,8 @@ class ClientHandler extends Thread{
 							System.out.println("Already have this ping on my table");
 						}
 					}
-
-					//Check for PONG and stuff 
 				}
+				//Check for PONG and stuff 
 			}
 		}catch(Exception e){
 			System.out.println(e.getMessage());
@@ -161,6 +164,8 @@ public class simpella {
 	public static HashMap<Integer, Thread> threadMap = new HashMap<Integer, Thread>();
 
 	static HashMap<Integer,Client> hmClients = new HashMap<Integer, Client>();
+
+	static String currentPath = "/home/csgrad/sindhuja/MNCProject2";
 
 	public static Boolean handshake = false;
 
@@ -279,7 +284,6 @@ public class simpella {
 							System.out.println("Message : " + message);
 							//Call the object of Info corresponding to the conID and set the message variable value.
 							(hmClients.get(conID)).setMessage(message);
-							//System.out.println("Thread state ::: "+ (threadMap.get(conID)).getState());
 							Socket tempClientSock = (hmClients.get(conID)).getSock(); 
 							try {
 								PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
@@ -315,15 +319,80 @@ public class simpella {
 							if(hmClients.get(i)!=null){
 								try {
 									tempClientSock =  (hmClients.get(i)).getSock();
-									//Use ObjectOutputStream for sending objects.
-			 						ObjectOutputStream clientOutput = new ObjectOutputStream(tempClientSock.getOutputStream());
-									clientOutput.writeObject(message);
+									//Use DataOutputStream for sending objects.
+									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+									clientOutput.write(message.convertToByteArray());
+									clientOutput.flush();
 								} catch (IOException e) {
 									e.printStackTrace();
 								}
 							}
 						}
 					}
+					else if (input.substring(0,5).equalsIgnoreCase("share"))
+					{
+						String[] splitArr = input.substring(6).split(" ");
+						String mypath;
+						//for setting the directory to share
+						try{
+							if(splitArr[0].equalsIgnoreCase("dir"))
+							{
+
+								if(splitArr[1].startsWith("/"))
+								{
+									mypath = splitArr[1];
+									File mydir = new File(mypath);
+									if(mydir.isDirectory())
+									{
+										mydir.setWritable(true, false);
+										currentPath = mydir.getPath();
+									}
+									else
+									{ 
+										int a = 1/0;
+									}
+								}
+
+								else
+								{
+									mypath =currentPath+"/"+splitArr[1];
+									File mydir = new File(mypath);
+									if(mydir.isDirectory())
+									{
+										mydir.setWritable(true, false);
+										currentPath = mydir.getPath();
+									}
+									else
+									{ 
+										int a = 1/0;
+									}
+								}
+							}
+
+							//for checking which is the current shared directory
+							if(splitArr[0].equalsIgnoreCase("-i"))
+							{
+								System.out.println("sharing "+currentPath);
+							}
+
+						}
+						catch(ArithmeticException e)
+						{
+							System.out.println("The entered directory does not exist");
+						}
+					}
+
+					else if (input.substring(0,5).equalsIgnoreCase("scan"))
+					{
+
+						System.out.println("scanning "+currentPath+" for files ...");
+						//File mydir = new File(currentPath);
+						//int numfiles = mydir.list().length;
+						//long size = mydir.getTotalSpace() - mydir.getUsableSpace();
+						//System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
+
+					}
+
 					else if(input.substring(0,7).equalsIgnoreCase("Connect")){
 						try {
 							String[] splitArr = input.substring(8).split(" ");
@@ -333,7 +402,6 @@ public class simpella {
 							tcpPort = Integer.parseInt(splitArr[1].trim());
 							Socket sock = new Socket(ipAddr, tcpPort);
 							// For each socket we create and start off a new thread.
-							// Take-id and go! #russelpeters
 							Client newCli = new Client();
 							newCli.setSock(sock);
 							newCli.handShake();

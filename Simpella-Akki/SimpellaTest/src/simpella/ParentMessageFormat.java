@@ -13,8 +13,7 @@ public class ParentMessageFormat implements java.io.Serializable{
 		return messageID;
 	}
 	public String getStringGUID(byte[] guidMessage){
-		Util ut = new Util();
-		return ut.guidToRawString(guidMessage);
+		return Util.guidToRawString(guidMessage);
 	}
 	public void setGUID(byte[] msgid) {
 		messageID = msgid;
@@ -48,5 +47,30 @@ public class ParentMessageFormat implements java.io.Serializable{
 	}
 	public void setPayload(String payload) {
 		this.payload = payload;
+	}
+
+	//Convert the fields that comprise this class into a byteArray as per the specifications.
+	public byte[] convertToByteArray(){
+		byte[] tempByte = new byte[24];
+		for(int i=0;i<messageID.length;i++){
+			tempByte[i] = messageID[i];
+		}
+		tempByte[16] = messageType;
+		
+		tempByte[17] = (byte)TTL;
+		
+		tempByte[18] = (byte)hops;
+		
+		int payloadLen1 = 0x000000FF & payloadLen;
+		int payloadLen2 = (0x0000FF00 & payloadLen) >> 8;
+		int payloadLen3 = (0x00FF0000 & payloadLen) >> 16;
+		int payloadLen4 = (0xFF000000 & payloadLen) >> 24;
+
+		tempByte[19] = (byte)payloadLen1;
+		tempByte[20] = (byte)(payloadLen2);
+		tempByte[22] = (byte)(payloadLen3);
+		tempByte[23] = (byte)(payloadLen4);
+		
+		return tempByte;
 	}
 }

@@ -1,7 +1,6 @@
 package simpella;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -17,10 +16,8 @@ class Client extends Thread
 	String message;
 	Integer conID;
 	Boolean handshake;
-	DataInputStream dis;
-	PrintStream os;
-	boolean send = false; 
-
+	boolean send = false;
+	
 	public int gettcpPort() {
 		return tcpPort;
 	}
@@ -47,22 +44,6 @@ class Client extends Thread
 
 	public Boolean getHandshake() {
 		return handshake;
-	}
-
-	public DataInputStream getDis() {
-		return dis;
-	}
-
-	public void setDis(DataInputStream dis) {
-		this.dis = dis;
-	}
-
-	public PrintStream getOs() {
-		return os;
-	}
-
-	public void setOs(PrintStream os) {
-		this.os = os;
 	}
 
 	public boolean isSend() {
@@ -126,17 +107,18 @@ class Client extends Thread
 		Socket tempClientSock = sock; 
 		String inputline = "";
 		try {
+			BufferedReader clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
 			PrintStream clientOutput = new PrintStream(tempClientSock.getOutputStream());
-			BufferedReader clientInputLine = null;
-			clientInputLine = new BufferedReader(new InputStreamReader(tempClientSock.getInputStream()));
 			clientInputLine.mark(0);
 			clientOutput.println("SIMPELLA CONNECT/0.6 \r \n");
+			clientOutput.flush();
 			while((inputline=clientInputLine.readLine())!=null){
 				if(inputline.startsWith("SIMPELLA/0.6")){
 					if(inputline.substring(13,16).equals("200")){
 						handshake = true;
 						System.out.println(inputline);
 						clientOutput.println(Util.CONNECTION_ACK);
+						clientOutput.flush();
 						clientInputLine.reset();
 					}else if(inputline.substring(13,16).equals("503")){
 						handshake=false;
