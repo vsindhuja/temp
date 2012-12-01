@@ -3,7 +3,6 @@ package simpella;
 import java.io.*; 
 import java.net.*; 
 import java.util.*;
-
 import simpella.Util;
 import simpella.Client;
 
@@ -211,7 +210,7 @@ public class simpella {
 				System.out.print("Simpella>>");
 				if (scan.hasNext()) {
 					input = scan.nextLine();
-					if (input.substring(0, 4).equalsIgnoreCase("info")) {
+					if (input.startsWith("info")) {
 						try {
 							Socket sock = new Socket("8.8.8.8", 53);
 							System.out.println(String.format("%20s%20s%20s%20s",
@@ -229,7 +228,7 @@ public class simpella {
 						}
 					}
 
-					else if (input.substring(0, 4).equalsIgnoreCase("show")) {
+					else if (input.startsWith("show")) {
 						System.out.println(String.format("%10s%10s%20s",
 								"conn. ID", "Host", "TCP port"));
 						System.out
@@ -247,7 +246,7 @@ public class simpella {
 							}
 						}
 						System.out.println("\r\n");
-					}else if(input.substring(0,6).equalsIgnoreCase("sendto")){
+					}else if(input.startsWith("sendto")){
 						String[] splitArr ;
 						try
 						{
@@ -272,7 +271,7 @@ public class simpella {
 							System.out.println(e.getMessage());
 						} 
 
-					}else if(input.substring(0,4).equalsIgnoreCase("send")){
+					}else if(input.startsWith("send")){
 						String[] splitArr ;
 						if(input.substring(5)!=null){
 							splitArr = input.substring(5).split(" ");
@@ -329,7 +328,8 @@ public class simpella {
 							}
 						}
 					}
-					else if (input.substring(0,5).equalsIgnoreCase("share"))
+
+					else if (input.startsWith("share"))
 					{
 						String[] splitArr = input.substring(6).split(" ");
 						String mypath;
@@ -382,18 +382,18 @@ public class simpella {
 						}
 					}
 
-					else if (input.substring(0,5).equalsIgnoreCase("scan"))
+					else if (input.startsWith("scan"))
 					{
 
 						System.out.println("scanning "+currentPath+" for files ...");
-						//File mydir = new File(currentPath);
-						//int numfiles = mydir.list().length;
-						//long size = mydir.getTotalSpace() - mydir.getUsableSpace();
+						File mydir = new File(currentPath);
+						int numfiles = mydir.list().length;
+						//long size = FileUtils.sizeOfDirectory(mydir);
 						//System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
 
 					}
 
-					else if(input.substring(0,7).equalsIgnoreCase("Connect")){
+					else if(input.startsWith("Connect")){
 						try {
 							String[] splitArr = input.substring(8).split(" ");
 
@@ -432,7 +432,7 @@ public class simpella {
 						} 
 					}
 
-					else if(input.substring(0, 10).equalsIgnoreCase("disconnect")){
+					else if(input.startsWith("disconnect")){
 						if(!(input.substring(10)).equals("")){
 							int conID = Integer.parseInt(input.substring(10).trim());
 							try {
