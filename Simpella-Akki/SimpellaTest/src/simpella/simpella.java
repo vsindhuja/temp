@@ -7,6 +7,8 @@ import java.util.*;
 import simpella.Util;
 import simpella.Client;
 
+import org.apache.commons.io.FileUtils;
+
 class Server extends Thread{
 
 	public static HashMap<byte[],InetAddress> routetable = new HashMap<byte[], InetAddress>();
@@ -384,7 +386,7 @@ public class simpella {
 						System.out.println("scanning "+currentPath+" for files ...");
 						File mydir = new File(currentPath);
 						int numfiles = mydir.list().length;
-						long size = mydir.getTotalSpace();
+						long size = FileUtils.sizeOfDirectory(mydir);
 						System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
 
 					}
