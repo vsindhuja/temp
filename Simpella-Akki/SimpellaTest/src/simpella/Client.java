@@ -9,6 +9,7 @@ import java.net.Socket;
 class Client extends Thread
 {
 	Socket sock;
+	Socket outsock;
 	String ipAddress;
 	String hostName;
 	int tcpPort;
@@ -17,7 +18,7 @@ class Client extends Thread
 	Integer conID;
 	Boolean handshake;
 	boolean send = false;
-	
+
 	public int gettcpPort() {
 		return tcpPort;
 	}
@@ -58,6 +59,10 @@ class Client extends Thread
 		this.sock = sock;
 	}
 
+	public void setoutSock(Socket sock) {
+		this.outsock = sock;
+	}
+
 	public void setIpAddress(String ipAddress) {
 		this.ipAddress = ipAddress;
 	}
@@ -69,6 +74,11 @@ class Client extends Thread
 	public Socket getSock() {
 		return sock;
 	}
+
+	public Socket getoutSock() {
+		return outsock;
+	}
+
 
 	public String getIpAddress() {
 		return ipAddress;

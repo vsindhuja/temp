@@ -117,9 +117,11 @@ class ClientHandler extends Thread{
 					for(int i=0;i<=23;i++){
 						inputByteArray[i] =  (byte) obis.readUnsignedByte();
 					}
+
 					if(inputByteArray[16]== Util.PING){
+
 						pmf = Util.convertByteArrayToParentMF(inputByteArray);
-						
+
 						//Checking to see if i have the ping
 						if(!Server.routetable.containsKey(pmf.getGUID()))
 						{
@@ -317,6 +319,7 @@ public class simpella {
 						{
 							if(hmClients.get(i)!=null){
 								try {
+									System.out.println("I AM SENDING THIS GUID:"+message.getStringGUID(message.getGUID()));
 									tempClientSock =  (hmClients.get(i)).getSock();
 									//Use DataOutputStream for sending objects.
 									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
@@ -393,7 +396,7 @@ public class simpella {
 
 					}
 
-					else if(input.startsWith("Connect")){
+					else if(input.startsWith("connect")){
 						try {
 							String[] splitArr = input.substring(8).split(" ");
 
@@ -408,7 +411,7 @@ public class simpella {
 							if(newCli.getHandshake())
 							{
 								connCount = connCount + 1;
-								newCli.setIpAddress(ipAddr);
+								newCli.setIpAddress(sock.getInetAddress().toString());
 								newCli.setConID(connCount);
 								newCli.settcpPort(tcpPort);
 								Util.inCount++;
@@ -417,6 +420,7 @@ public class simpella {
 								Thread t = new Thread(newCli);
 								threadMap.put(connCount, t);
 								t.start();
+								new ClientHandler(sock).start();
 							}
 
 						} catch (IndexOutOfBoundsException ie) {
