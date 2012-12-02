@@ -8,7 +8,7 @@ import simpella.Client;
 
 class Server extends Thread{
 
-	public static HashMap<byte[],InetAddress> routetable = new HashMap<byte[], InetAddress>();
+	public static HashMap<short[],InetAddress> routetable = new HashMap<short[], InetAddress>();
 	public static ServerSocket tcpservsock;
 	public Socket socket;
 	public static int count = 0;
@@ -43,14 +43,13 @@ class Server extends Thread{
 					connAcceptStatus = true;
 					Util.inCount ++;
 				}
-
 				if (connAcceptStatus) {
 					try{
 						//input.mark(0);
 						while ((incomingMess = input.readLine()) != null) {
 
 							if (incomingMess.startsWith("SIMPELLA CONNECT/0.6")) {
-								// Checking for existing connenctions
+								// Checking for existing connections
 
 								if (incomingMess.equalsIgnoreCase(Util.CONNECTION_ACK)){
 									System.out.println("" + incomingMess);
@@ -94,8 +93,6 @@ class Server extends Thread{
 
 class ClientHandler extends Thread{
 	private Socket sock;
-	PrintStream output ;
-	BufferedReader input ;
 
 	ClientHandler(Socket sock){
 		this.sock = sock;
@@ -104,24 +101,23 @@ class ClientHandler extends Thread{
 	public void run(){
 
 		try{
-			output = new PrintStream(sock.getOutputStream());
-			input= new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			//output = new PrintStream(sock.getOutputStream());
+			//input= new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			DataInputStream obis = new DataInputStream(sock.getInputStream());
-
+		
 			while(true){
 				ParentMessageFormat pmf = new ParentMessageFormat();
 				// To handle the receiving pings
-				if(obis.available()>0){
+				
+				//if(obis.available()>0){
+					byte[] inputByteArray = new byte[23];
 
-					byte[] inputByteArray = new byte[24];
-					for(int i=0;i<=23;i++){
+					for(int i=0;i<inputByteArray.length;i++){
 						inputByteArray[i] =  (byte) obis.readUnsignedByte();
 					}
 
-					if(inputByteArray[16]== Util.PING){
-
+					if((byte)inputByteArray[16] == (byte)Util.PING){
 						pmf = Util.convertByteArrayToParentMF(inputByteArray);
-
 						//Checking to see if i have the ping
 						if(!Server.routetable.containsKey(pmf.getGUID()))
 						{
@@ -148,7 +144,7 @@ class ClientHandler extends Thread{
 							System.out.println("Already have this ping on my table");
 						}
 					}
-				}
+				//}
 				//Check for PONG and stuff 
 			}
 		}catch(Exception e){
@@ -248,31 +244,6 @@ public class simpella {
 							}
 						}
 						System.out.println("\r\n");
-					}else if(input.startsWith("sendto")){
-						String[] splitArr ;
-						try
-						{
-							if(input.substring(7)!=null){
-								splitArr = input.substring(7).split(" ");
-								int port = Integer.parseInt(splitArr[1]);
-								InetAddress IPAddress = InetAddress.getByName(splitArr[0]);
-								String message = "";
-								for(int i=2;i<splitArr.length;i++){
-									message = splitArr[2] + " ";
-								}
-								DatagramSocket clientSocket = new DatagramSocket();
-								byte[] sendData = new byte[1024];
-								sendData = message.getBytes();
-								DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-								clientSocket.send(sendPacket);
-								clientSocket.close();
-							}
-						}	catch (UnknownHostException e) {
-							System.out.println(e.getMessage());
-						} catch (IOException e) {
-							System.out.println(e.getMessage());
-						} 
-
 					}else if(input.startsWith("send")){
 						String[] splitArr ;
 						if(input.substring(5)!=null){
@@ -303,11 +274,9 @@ public class simpella {
 
 						Util pingutil = new Util();
 						ParentMessageFormat message = new ParentMessageFormat();
-						byte[] guid;
 
-						guid =pingutil.generateGUID();	
-						message.setGUID(guid);
-						message.setMessageType(Util.PING);
+						message.setGUID(pingutil.generateGUID());
+						message.setMessageType((byte)Util.PING);
 						message.setTTL(7);
 						message.setHops(0);
 						message.setPayloadLen(0);
@@ -319,8 +288,12 @@ public class simpella {
 						{
 							if(hmClients.get(i)!=null){
 								try {
-									System.out.println("I AM SENDING THIS GUID:"+message.getStringGUID(message.getGUID()));
 									tempClientSock =  (hmClients.get(i)).getSock();
+									/*System.out.println("UPDATE RUNNING on port " + "local port: " +  tempClientSock.getLocalPort() 
+											+ " remote port :" + tempClientSock.getPort() + " remote IP " + tempClientSock.getInetAddress() 
+											+ " Socket state " + tempClientSock.isConnected() 
+											+ " Local socket address : " + tempClientSock.getLocalSocketAddress()
+											+ " Remote socket address : " + tempClientSock.getRemoteSocketAddress());*/
 									//Use DataOutputStream for sending objects.
 									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
 									clientOutput.write(message.convertToByteArray());
