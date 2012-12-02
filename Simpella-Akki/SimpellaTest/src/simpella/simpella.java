@@ -56,7 +56,7 @@ class Server extends Thread{
 									System.out.print("Simpella>>");
 									Client newCli = new Client();
 									newCli.setSock(socket);
-									newCli.setIpAddress(socket.getInetAddress().toString());
+									newCli.setIpAddress(socket.getInetAddress().toString().substring(1));
 									simpella.connCount = simpella.connCount + 1;
 									newCli.setConID(simpella.connCount);
 									newCli.settcpPort(socket.getLocalPort());
@@ -101,51 +101,56 @@ class ClientHandler extends Thread{
 	public void run(){
 
 		try{
-			//output = new PrintStream(sock.getOutputStream());
-			//input= new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			DataInputStream obis = new DataInputStream(sock.getInputStream());
-		
-			while(true){
-				ParentMessageFormat pmf = new ParentMessageFormat();
-				// To handle the receiving pings
-				
-				//if(obis.available()>0){
-					byte[] inputByteArray = new byte[23];
 
-					for(int i=0;i<inputByteArray.length;i++){
-						inputByteArray[i] =  (byte) obis.readUnsignedByte();
-					}
+			DataInputStream obis = new DataInputStream(sock.getInputStream());			
+			ParentMessageFormat pmf = new ParentMessageFormat();
 
-					if((byte)inputByteArray[16] == (byte)Util.PING){
-						pmf = Util.convertByteArrayToParentMF(inputByteArray);
-						//Checking to see if i have the ping
-						if(!Server.routetable.containsKey(pmf.getGUID()))
+			byte[] inputByteArray = new byte[23];
+			int sizeRead = -1;
+
+			while ((sizeRead = obis.read(inputByteArray)) > 0)
+			{
+				for(int i=0;i<inputByteArray.length;i++){
+					inputByteArray[i] =  (byte) obis.readUnsignedByte();
+				}
+
+				if((byte)inputByteArray[16] == (byte)Util.PING){
+					pmf = Util.convertByteArrayToParentMF(inputByteArray);
+					//Checking to see if i have the ping
+					if(!Server.routetable.containsKey(pmf.getGUID()))
+					{
+						Socket tempClientSock;
+						Server.routetable.put(pmf.getGUID(), sock.getInetAddress());
+						for(int i=0;i<=simpella.hmClients.size();i++)
 						{
-							Socket tempClientSock;
-							Server.routetable.put(pmf.getGUID(), sock.getInetAddress());
-							for(int i=0;i<=simpella.hmClients.size();i++)
-							{
-								if(simpella.hmClients.get(i)!=null){
-									if(!simpella.hmClients.get(i).getIpAddress().equals(sock.getInetAddress().toString()))
-										try {
-											tempClientSock = (simpella.hmClients.get(i)).getSock();
-											//Use DataOutputStream for sending objects.
-											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
-											clientOutput.write(pmf.convertToByteArray());
-											clientOutput.flush();
-										} catch (IOException e) {
-											e.printStackTrace();
-										}
-								}
+							if(simpella.hmClients.get(i)!=null){
+								String temp = sock.getInetAddress().toString();
+								System.out.println(temp);
+								if(!simpella.hmClients.get(i).getIpAddress().equals(temp.substring(1)))
+									try {
+										tempClientSock = (simpella.hmClients.get(i)).getSock();
+										//Use DataOutputStream for sending objects
+										DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+										clientOutput.write(pmf.convertToByteArray());
+										clientOutput.flush();
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
 							}
 						}
-						else
-						{
-							System.out.println("Already have this ping on my table");
-						}
 					}
+					else
+					{
+						System.out.println("Already have this ping on my table");
+					}
+				}
+				else
+				{
+					System.out.println("type check for ping failed");
+				}
 				//}
 				//Check for PONG and stuff 
+				System.out.print("Simpella>>");
 			}
 		}catch(Exception e){
 			System.out.println(e.getMessage());
@@ -289,14 +294,10 @@ public class simpella {
 							if(hmClients.get(i)!=null){
 								try {
 									tempClientSock =  (hmClients.get(i)).getSock();
-									/*System.out.println("UPDATE RUNNING on port " + "local port: " +  tempClientSock.getLocalPort() 
-											+ " remote port :" + tempClientSock.getPort() + " remote IP " + tempClientSock.getInetAddress() 
-											+ " Socket state " + tempClientSock.isConnected() 
-											+ " Local socket address : " + tempClientSock.getLocalSocketAddress()
-											+ " Remote socket address : " + tempClientSock.getRemoteSocketAddress());*/
-									//Use DataOutputStream for sending objects.
 									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
 									clientOutput.write(message.convertToByteArray());
+									System.out.println("PMF Variables are ::: GUID " + message.guidToRawString() + " Message Type " + message.getMessageType()
+											+" TTL :" + message.getTTL() + " Hops :" + message.getHops() + " Payload Length : " + message.getPayloadLen());
 									clientOutput.flush();
 								} catch (IOException e) {
 									e.printStackTrace();
@@ -369,14 +370,18 @@ public class simpella {
 
 					}
 
-					else if(input.startsWith("connect")){
+					else if(input.startsWith("open")){
 						try {
-							String[] splitArr = input.substring(8).split(" ");
+							String[] splitArr = input.substring(5).split(" ");
 
-							ipAddr = splitArr[0];
+							String[] splitArr2 = splitArr[0].split(":");
+							ipAddr = splitArr2[0].trim();
 							//Trim the last PORT number from the input string.
-							tcpPort = Integer.parseInt(splitArr[1].trim());
+							tcpPort = Integer.parseInt(splitArr2[1].trim());
 							Socket sock = new Socket(ipAddr, tcpPort);
+							String ipstr = sock.getInetAddress().toString();
+							String[] temparr = ipstr.split("/");
+							String ip = temparr[1];
 							// For each socket we create and start off a new thread.
 							Client newCli = new Client();
 							newCli.setSock(sock);
@@ -384,7 +389,7 @@ public class simpella {
 							if(newCli.getHandshake())
 							{
 								connCount = connCount + 1;
-								newCli.setIpAddress(sock.getInetAddress().toString());
+								newCli.setIpAddress(ip);
 								newCli.setConID(connCount);
 								newCli.settcpPort(tcpPort);
 								Util.inCount++;

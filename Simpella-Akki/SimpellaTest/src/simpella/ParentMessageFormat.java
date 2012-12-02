@@ -5,14 +5,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class ParentMessageFormat implements java.io.Serializable{
-	
+
 	short[] messageID; 				//Will Store the GUID. HAVE to call generateGUID() to initialize this.
 	byte messageType;				//Defined by the Message Type in Util class
 	int TTL = 7;					//Unsigned integer, decreased by 1 by every sender. Initialized to 7. 
 	int hops = 0;					//Number of hops the message has passed through
 	int payloadLen = 0;
 	String payload = "";			//Set to String for testing purpose. NEEDS TO BE CHANGED TO THE RESPECTIVE OBJECT.
-	
+
 	public short[] getGUID() {
 		return messageID;
 	}
@@ -60,11 +60,11 @@ public class ParentMessageFormat implements java.io.Serializable{
 			tempByte[i] = messageID[i];
 		}
 		tempByte[16] = messageType;
-		
+
 		tempByte[17] = (byte)TTL;
-		
+
 		tempByte[18] = (byte)hops;
-		
+
 		int payloadLen1 = 0x000000FF & payloadLen;
 		int payloadLen2 = (0x0000FF00 & payloadLen) >> 8;
 		int payloadLen3 = (0x00FF0000 & payloadLen) >> 16;
@@ -74,12 +74,12 @@ public class ParentMessageFormat implements java.io.Serializable{
 		tempByte[20] = (byte)(payloadLen2);
 		tempByte[21] = (byte)(payloadLen3);
 		tempByte[22] = (byte)(payloadLen4);
-		
+
 		for(int i=0;i<=22;i++)
 			System.out.println("CONVERTINGBYTESSSS +++ "+ i + " *** "+ tempByte[i]);
-		
+
 		return tempByte;
-	*/
+	 */
 
 		// TODO handle exception avoid null pointer
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
@@ -136,17 +136,16 @@ public class ParentMessageFormat implements java.io.Serializable{
 			System.out.println("Issue in Data input Stream");
 		}
 
-		System.out.println("SIZE : " + byteStream.toByteArray().length);
 		return byteStream.toByteArray();
 	}
-	
+
 	public String guidToRawString(){
 		StringBuffer message = new StringBuffer();
 
 		for (int i = 0; i < messageID.length; i++) {
 			StringBuffer messageSection = new StringBuffer();
 			messageSection.append(Integer.toHexString(messageID[i]));
-			
+
 			// Ensure every value is 2 chars long (i.e. 0F instead of F)
 			if (messageSection.length() < 2) {
 				message.append('0');
@@ -156,8 +155,8 @@ public class ParentMessageFormat implements java.io.Serializable{
 
 		return message.toString();
 	}
-	
-public void constructMessage(){/*
+
+	public void constructMessage(){/*
 	StringBuffer buffer = new StringBuffer();
 
 	for (int i = 0; i < rawMessage.length; i++) {
@@ -191,6 +190,6 @@ public void constructMessage(){/*
 	payloadSize += (byte2 << 8);
 	payloadSize += (byte3 << 16);
 	payloadSize += (byte4 << 24);
-*/}
+	 */}
 
 }

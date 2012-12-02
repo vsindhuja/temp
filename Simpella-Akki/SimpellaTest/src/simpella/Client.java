@@ -137,6 +137,7 @@ class Client extends Thread
 					}
 				}
 			}
+
 		} catch (IOException e) {
 			//Do nothing, since this exception is coming from the BufferedReader's reset method call.
 			System.out.print("");
