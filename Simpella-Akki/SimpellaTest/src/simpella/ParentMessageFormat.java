@@ -87,22 +87,22 @@ public class ParentMessageFormat implements java.io.Serializable{
 		try {
 
 			//byteStream = ;
-			DataOutputStream payloadStream = new DataOutputStream(byteStream);
+			DataOutputStream pStream = new DataOutputStream(byteStream);
 
 			// Write the guid
 			short[] guidData = getGUID();
 			for (int i = 0; i < guidData.length; i++) {
-				payloadStream.writeByte((byte)guidData[i]);
+				pStream.writeByte((byte)guidData[i]);
 			}
 
 			// Write the function (payload descriptor)
-			payloadStream.writeByte(messageType);
+			pStream.writeByte(messageType);
 
 			// Write the time to live
-			payloadStream.writeByte(TTL);
+			pStream.writeByte(TTL);
 
 			// Write the hop count
-			payloadStream.writeByte(0);
+			pStream.writeByte(0);
 
 			if (getMessageType() == Util.PING) {
 				payload = null;
@@ -114,10 +114,10 @@ public class ParentMessageFormat implements java.io.Serializable{
 			int payloadSize3 = (0x00FF0000 & payloadLen) >> 16;
 			int payloadSize4 = (0xFF000000 & payloadLen) >> 24;
 
-			payloadStream.writeByte(payloadSize1);
-			payloadStream.writeByte(payloadSize2);
-			payloadStream.writeByte(payloadSize3);
-			payloadStream.writeByte(payloadSize4);
+			pStream.writeByte(payloadSize1);
+			pStream.writeByte(payloadSize2);
+			pStream.writeByte(payloadSize3);
+			pStream.writeByte(payloadSize4);
 
 			// Write the payload
 			/*if (null != payload) {
@@ -129,7 +129,7 @@ public class ParentMessageFormat implements java.io.Serializable{
 			}*/
 
 			// all done
-			payloadStream.close();
+			pStream.close();
 
 		}
 		catch (IOException io) {
