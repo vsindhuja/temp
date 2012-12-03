@@ -8,7 +8,6 @@ import simpella.Client;
 
 class Server extends Thread{
 
-	public static HashMap<short[],InetAddress> routetable = new HashMap<short[], InetAddress>();
 	public static ServerSocket tcpservsock;
 	public Socket socket;
 	public static int count = 0;
@@ -93,6 +92,8 @@ class Server extends Thread{
 
 class ClientHandler extends Thread{
 	private Socket sock;
+	public static HashMap<String,InetAddress> routetable = new HashMap<String, InetAddress>();
+
 
 	ClientHandler(Socket sock){
 		this.sock = sock;
@@ -107,50 +108,59 @@ class ClientHandler extends Thread{
 
 			byte[] inputByteArray = new byte[23];
 			int sizeRead = -1;
-
 			while ((sizeRead = obis.read(inputByteArray)) > 0)
 			{
-				for(int i=0;i<inputByteArray.length;i++){
-					inputByteArray[i] =  (byte) obis.readUnsignedByte();
-				}
+				if(!(inputByteArray[0] == 10 && inputByteArray[1] == 0))
+				{
+					//System.out.println("Reading Input" + sizeRead);
+					/*for(int i=0;i<inputByteArray.length;i++){
+						//inputByteArray[i] =  (byte) obis.readUnsignedByte();
+						System.out.println("CH : Value at byte"+i+"="+inputByteArray[i]);
 
-				if((byte)inputByteArray[16] == (byte)Util.PING){
-					pmf = Util.convertByteArrayToParentMF(inputByteArray);
-					//Checking to see if i have the ping
-					if(!Server.routetable.containsKey(pmf.getGUID()))
-					{
-						Socket tempClientSock;
-						Server.routetable.put(pmf.getGUID(), sock.getInetAddress());
-						for(int i=0;i<=simpella.hmClients.size();i++)
+					}*/
+
+					if((byte)inputByteArray[16] == (byte)Util.PING){
+						pmf = Util.convertByteArrayToParentMF(inputByteArray);
+						//Checking to see if i have the ping
+						if(!routetable.containsKey(pmf.guidToRawString()))
 						{
-							if(simpella.hmClients.get(i)!=null){
-								String temp = sock.getInetAddress().toString();
-								System.out.println(temp);
-								if(!simpella.hmClients.get(i).getIpAddress().equals(temp.substring(1)))
-									try {
-										tempClientSock = (simpella.hmClients.get(i)).getSock();
-										//Use DataOutputStream for sending objects
-										DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
-										clientOutput.write(pmf.convertToByteArray());
-										clientOutput.flush();
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
+							Socket tempClientSock;
+							routetable.put(pmf.guidToRawString(), sock.getInetAddress());
+							//System.out.println("Route table Key set = "+routetable.keySet());
+							for(int i=0;i<=simpella.hmClients.size();i++)
+							{
+								if(simpella.hmClients.get(i)!=null){
+									String temp = sock.getInetAddress().toString();
+									String[] temparr = temp.split("/");
+									String ip = temparr[1];
+									if(!simpella.hmClients.get(i).getIpAddress().trim().equals(ip.trim()))
+										try {
+											tempClientSock = (simpella.hmClients.get(i)).getSock();
+
+											//Use DataOutputStream for sending objects
+											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+											clientOutput.write(pmf.convertToByteArray());
+											clientOutput.flush();
+
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+								}
 							}
+						}
+						else
+						{
+							System.out.println("Already have this ping on my table");
 						}
 					}
 					else
 					{
-						System.out.println("Already have this ping on my table");
+						System.out.println("type check for ping failed");
 					}
+					//}
+					//Check for PONG and stuff 
+					System.out.print("Simpella>>");
 				}
-				else
-				{
-					System.out.println("type check for ping failed");
-				}
-				//}
-				//Check for PONG and stuff 
-				System.out.print("Simpella>>");
 			}
 		}catch(Exception e){
 			System.out.println(e.getMessage());
@@ -169,6 +179,9 @@ public class simpella {
 
 	static String currentPath = "/home/csgrad/sindhuja/MNCProject2";
 
+	public static short[] servguid;
+
+
 	public static Boolean handshake = false;
 
 	@SuppressWarnings("static-access")
@@ -176,6 +189,8 @@ public class simpella {
 
 		int tcpport = Integer.parseInt(args[0]);
 		int dloadport = Integer.parseInt(args[1]);
+		Util pingutil = new Util();
+		servguid = pingutil.generateGUID();
 
 		try {
 			Socket sock1 = new Socket("8.8.8.8", 53);
@@ -277,15 +292,14 @@ public class simpella {
 					}
 					else if(input.startsWith("update")){
 
-						Util pingutil = new Util();
 						ParentMessageFormat message = new ParentMessageFormat();
 
-						message.setGUID(pingutil.generateGUID());
+						message.setGUID(servguid);
 						message.setMessageType((byte)Util.PING);
 						message.setTTL(7);
 						message.setHops(0);
 						message.setPayloadLen(0);
-						message.setPayload("0");
+						message.setPayload(null);
 
 						Socket tempClientSock ;
 
@@ -296,8 +310,6 @@ public class simpella {
 									tempClientSock =  (hmClients.get(i)).getSock();
 									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
 									clientOutput.write(message.convertToByteArray());
-									System.out.println("PMF Variables are ::: GUID " + message.guidToRawString() + " Message Type " + message.getMessageType()
-											+" TTL :" + message.getTTL() + " Hops :" + message.getHops() + " Payload Length : " + message.getPayloadLen());
 									clientOutput.flush();
 								} catch (IOException e) {
 									e.printStackTrace();
@@ -399,6 +411,34 @@ public class simpella {
 								threadMap.put(connCount, t);
 								t.start();
 								new ClientHandler(sock).start();
+								//Sending Ping Part
+								ParentMessageFormat message = new ParentMessageFormat();
+
+								message.setGUID(servguid);
+								message.setMessageType((byte)Util.PING);
+								message.setTTL(7);
+								message.setHops(0);
+								message.setPayloadLen(0);
+								message.setPayload(null);
+
+								servguid = message.getGUID().clone();
+
+								Socket tempClientSock ;
+
+								for(int i=0;i<=hmClients.size();i++)
+								{
+									if(hmClients.get(i)!=null){
+										try {
+											tempClientSock =  (hmClients.get(i)).getSock();
+											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+											clientOutput.write(message.convertToByteArray());
+											clientOutput.flush();
+
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+									}
+								}
 							}
 
 						} catch (IndexOutOfBoundsException ie) {
