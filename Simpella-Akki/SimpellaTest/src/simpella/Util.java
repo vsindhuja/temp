@@ -1,8 +1,8 @@
 package simpella;
 
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -46,6 +46,7 @@ public class Util {
 	public static String NEWLINE_TAB = "\r\n";
 	static ArrayList<SearchFiles> searchResult = new ArrayList();
 	static HashMap<String, String> fileIndexTofileNameMap = new HashMap<String, String>();
+	static String[] existingFiles;
 
 	//Global Utility Methods
 
@@ -211,5 +212,25 @@ public class Util {
 		temp += (byte4 << 24);
 
 		return temp;
+	}
+	public static byte[] convertIntToByteArray(int num){
+		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+		DataOutputStream dStream = new DataOutputStream(byteStream);
+		
+		// Write the Payload size in little-endian
+		int num1 = 0x000000FF & num;
+		int num2 = (0x0000FF00 & num) >> 8;
+		int num3 = (0x00FF0000 & num) >> 16;
+		int num4 = (0xFF000000 & num) >> 24;
+		try {
+			dStream.writeByte(num1);
+			dStream.writeByte(num2);
+			dStream.writeByte(num3);
+			dStream.writeByte(num4);
+			dStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return byteStream.toByteArray();
 	}
 }

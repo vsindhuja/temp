@@ -1,14 +1,24 @@
 package simpella;
 
-import java.io.*; 
-import java.lang.reflect.Field;
-import java.net.*; 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.BindException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
 import java.nio.ShortBuffer;
-import simpella.Util;
-import simpella.Client;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Scanner;
 
 class Server extends Thread{
 
@@ -628,8 +638,10 @@ public class simpella {
 						System.out.println("scanning "+currentPath+" for files ...");
 						File mydir = new File(currentPath);
 						int numfiles = mydir.list().length;
+						mydir.list();
 						long size = mydir.getTotalSpace();
 						System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
+						Util.existingFiles = new String[numfiles];
 
 					}
 
