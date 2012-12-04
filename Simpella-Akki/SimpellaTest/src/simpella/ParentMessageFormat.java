@@ -11,7 +11,7 @@ public class ParentMessageFormat implements java.io.Serializable{
 	int TTL = 7;					//Unsigned integer, decreased by 1 by every sender. Initialized to 7. 
 	int hops = 0;					//Number of hops the message has passed through
 	int payloadLen = 0;
-	String payload = "";			//Set to String for testing purpose. NEEDS TO BE CHANGED TO THE RESPECTIVE OBJECT.
+	byte[] payload;			//Set to String for testing purpose. NEEDS TO BE CHANGED TO THE RESPECTIVE OBJECT.
 
 	public short[] getGUID() {
 		return messageID;
@@ -46,42 +46,16 @@ public class ParentMessageFormat implements java.io.Serializable{
 	public void setPayloadLen(int payloadLen) {
 		this.payloadLen = payloadLen;
 	}
-	public String getPayload() {
+	public byte[] getPayload() {
 		return payload;
 	}
-	public void setPayload(String payload) {
+	public void setPayload(byte[] payload) {
 		this.payload = payload;
 	}
 
 	//Convert the fields that comprise this class into a byteArray as per the specifications.
-	public byte[] convertToByteArray(){/*
-		byte[] tempByte = new byte[23];
-		for(int i=0;i<messageID.length;i++){
-			tempByte[i] = messageID[i];
-		}
-		tempByte[16] = messageType;
+	public byte[] convertToByteArray(){
 
-		tempByte[17] = (byte)TTL;
-
-		tempByte[18] = (byte)hops;
-
-		int payloadLen1 = 0x000000FF & payloadLen;
-		int payloadLen2 = (0x0000FF00 & payloadLen) >> 8;
-		int payloadLen3 = (0x00FF0000 & payloadLen) >> 16;
-		int payloadLen4 = (0xFF000000 & payloadLen) >> 24;
-
-		tempByte[19] = (byte)payloadLen1;
-		tempByte[20] = (byte)(payloadLen2);
-		tempByte[21] = (byte)(payloadLen3);
-		tempByte[22] = (byte)(payloadLen4);
-
-		for(int i=0;i<=22;i++)
-			System.out.println("CONVERTINGBYTESSSS +++ "+ i + " *** "+ tempByte[i]);
-
-		return tempByte;
-	 */
-
-		// TODO handle exception avoid null pointer
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
 		try {
@@ -119,16 +93,14 @@ public class ParentMessageFormat implements java.io.Serializable{
 			pStream.writeByte(payloadSize3);
 			pStream.writeByte(payloadSize4);
 
-			// Write the payload
-			/*if (null != payload) {
+			if (null != payload) {
 				// Message may not have a payload (ex. Ping)
 				for (int i = 0; i < payload.length; i++) {
-					byte payloadByte = (byte)payload[i];
-					payloadStream.writeByte(payloadByte);
+					byte payloadByte = payload[i];
+					pStream.writeByte(payloadByte);
 				}
-			}*/
+			}
 
-			// all done
 			pStream.close();
 
 		}
@@ -155,41 +127,4 @@ public class ParentMessageFormat implements java.io.Serializable{
 
 		return message.toString();
 	}
-
-	public void constructMessage(){/*
-	StringBuffer buffer = new StringBuffer();
-
-	for (int i = 0; i < rawMessage.length; i++) {
-		buffer.append("[" + Integer.toHexString(rawMessage[i]) + "]");
-
-	}
-
-	LOG.debug("Message constructor: Raw Message Bytes: " + buffer.toString());
-
-	// Copy the GUID
-	short[] guidData = new short[16];
-	System.arraycopy(rawMessage, 0, guidData, 0, guidData.length);
-	guid = new GUID(guidData);
-
-	// Copy the function identifier
-	type = rawMessage[16];
-
-	// Copy the TTL 
-	ttl = (byte)rawMessage[17];
-
-	// Copy the hop count
-	hops = (byte)rawMessage[18];
-
-	// Copy the payload size (little endian)
-	int byte1 = rawMessage[19];
-	int byte2 = rawMessage[20];
-	int byte3 = rawMessage[21];
-	int byte4 = rawMessage[22];
-
-	payloadSize += byte1;
-	payloadSize += (byte2 << 8);
-	payloadSize += (byte3 << 16);
-	payloadSize += (byte4 << 24);
-	 */}
-
 }

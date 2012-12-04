@@ -1,5 +1,6 @@
 package simpella;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Random;
@@ -80,34 +81,25 @@ public class Util {
 	public static PongMessageFormat convertByteArrayToPongMF(byte[] inputBytes){
 		PongMessageFormat pmf = new PongMessageFormat();
 		int i=0;
-		byte[] str = new byte[4];
+		byte[] str = new byte[2];
+		byte[] str1 = new byte[4];
 
-		for(int j=0;j<4;j++)
-			str[j] = inputBytes[i+1];
-		pmf.setPort(ByteBuffer.wrap(str).asShortBuffer().get(0));
+		str [0] = inputBytes[0];
+		str [1] = inputBytes[1];
+		pmf.setPort((short)Util.getIntfromByteArray(str));
 
-		//pmf.setPort(new Short(str));
 		String ipadd="";
 		for(int j=0;j<4;j++)
-			str[j] = inputBytes[i+1];
-
-		//ipadd = ipadd + inputBytes[i+1];
-		ByteBuffer buffer = ByteBuffer.wrap(str);
-		buffer.order(ByteOrder.LITTLE_ENDIAN);  // if you want little-endian
-		int result = buffer.getShort();
-		ipadd = ipadd + result;
-
-		//String st = new String(str);
+			str1[j] = inputBytes[i+2];
+		ipadd = Util.getIPAddressfromArray(str1);
 		pmf.setIpAddress(ipadd);
 
 		for(int j=0;j<4;j++)
-			str[j] = inputBytes[i+1];
-
+			str1[j] = inputBytes[i+6];
 		pmf.setFileSharingCount(byteArrayToInt(str));
 
 		for(int j=0;j<4;j++)
-			str[j] = inputBytes[i+1];
-
+			str1[j] = inputBytes[i+10];
 		pmf.setKbShared(byteArrayToInt(str));
 
 		System.out.println("PMF Variables are ::: FileSharingCount " + pmf.getFileSharingCount() + " KbShared " + pmf.getKbShared()
@@ -128,8 +120,8 @@ public class Util {
 	public static ParentMessageFormat convertByteArrayToParentMF(byte[] inputBytes){
 		ParentMessageFormat pmf = new ParentMessageFormat();
 		short[] tempGUID = new short[16];
-		for(int i=0;i<=15;i++){
-			tempGUID[i] = (short)inputBytes[i];
+		for(int i=0;i<16;i++){
+			tempGUID[i] = inputBytes[i];
 		}
 		pmf.setGUID(tempGUID);
 		pmf.setMessageType(inputBytes[16]);
@@ -148,9 +140,49 @@ public class Util {
 		payloadLen += (byte4 << 24);
 		pmf.setPayloadLen(payloadLen);
 
-		/*System.out.println("PMF Variables are ::: GUID " + pmf.guidToRawString() + " Message Type " + pmf.getMessageType()
-				+" TTL :" + pmf.getTTL() + " Hops :" + pmf.getHops() + " Payload Length : " + pmf.getPayloadLen());*/
+		byte[] payload = new byte[pmf.getPayloadLen()];
+
+		// Write the payload
+
+		// Message may not have a payload (ex. Ping)
+		if(pmf.getPayloadLen()!=0)
+		{
+			for(int i=0;i<pmf.getPayloadLen();i++)
+			{
+
+				payload[i]=inputBytes[i+23];
+			}
+
+		}
+		pmf.setPayload(payload);
+
+		//System.out.println("PMF Variables are ::: GUID " + pmf.guidToRawString() + " Message Type " + pmf.getMessageType()
+		//	+" TTL :" + pmf.getTTL() + " Hops :" + pmf.getHops() + " Payload Length : " + pmf.getPayloadLen());
 
 		return pmf;
+	}
+
+	public static String getIPAddressfromArray(byte[] tempPort){
+		String ipaddr = "";
+		for(int i =0 ;i<4; i++)
+			ipaddr = ipaddr + "."+(int)(tempPort[i] & 255);
+
+		ipaddr = ipaddr.substring(0,ipaddr.length()-1);
+		return ipaddr;
+	}
+
+	public static int getIntfromByteArray(byte[] bytes){
+		int temp=0;
+		int byte1 = bytes[0];
+		int byte2 = bytes[1];
+		int byte3 = bytes[2];
+		int byte4 = bytes[3];
+
+		temp += byte1;
+		temp += (byte2 << 8);
+		temp += (byte3 << 16);
+		temp += (byte4 << 24);
+
+		return temp;
 	}
 }

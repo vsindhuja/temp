@@ -2,7 +2,10 @@ package simpella;
 
 import java.io.*; 
 import java.net.*; 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
+import java.nio.ShortBuffer;
 import simpella.Util;
 import simpella.Client;
 
@@ -92,7 +95,11 @@ class Server extends Thread{
 
 class ClientHandler extends Thread{
 	private Socket sock;
-	public static HashMap<String,InetAddress> routetable = new HashMap<String, InetAddress>();
+	public static HashMap<String,String> routetable = new HashMap<String, String>();
+	static boolean isguid;
+
+
+	public static ArrayList<PongMessageFormat> ponglist = new ArrayList<PongMessageFormat>();
 
 
 	ClientHandler(Socket sock){
@@ -105,15 +112,13 @@ class ClientHandler extends Thread{
 
 			DataInputStream obis = new DataInputStream(sock.getInputStream());			
 			ParentMessageFormat pmf = new ParentMessageFormat();
-
-			byte[] inputByteArray = new byte[23];
+			byte[] inputByteArray = new byte[4096];
 			int sizeRead = -1;
 			while ((sizeRead = obis.read(inputByteArray)) > 0)
 			{
 				if(!(inputByteArray[0] == 10 && inputByteArray[1] == 0))
 				{
-					//System.out.println("Reading Input" + sizeRead);
-					/*for(int i=0;i<inputByteArray.length;i++){
+					/*for(int i=0;i<23;i++){
 						//inputByteArray[i] =  (byte) obis.readUnsignedByte();
 						System.out.println("CH : Value at byte"+i+"="+inputByteArray[i]);
 
@@ -122,43 +127,270 @@ class ClientHandler extends Thread{
 					if((byte)inputByteArray[16] == (byte)Util.PING){
 						pmf = Util.convertByteArrayToParentMF(inputByteArray);
 						//Checking to see if i have the ping
+
+						Socket tempClientSock;
+
+						String ipstr = sock.getInetAddress().toString();
+						String ip ;
+						if(ipstr.contains("cse.buffalo.edu"))
+						{
+							String[] temparr = ipstr.split("/");
+							ip= temparr[1];
+						}
+						else
+						{
+							ip = ipstr.substring(1);
+						}
+
+						/*for(int i =0;i<pmf.getGUID().length;i++)
+						{
+							System.out.println("PING GUID at"+i+":"+pmf.getGUID()[i]);
+
+						}*/						
+
 						if(!routetable.containsKey(pmf.guidToRawString()))
 						{
-							Socket tempClientSock;
-							routetable.put(pmf.guidToRawString(), sock.getInetAddress());
-							//System.out.println("Route table Key set = "+routetable.keySet());
-							for(int i=0;i<=simpella.hmClients.size();i++)
-							{
-								if(simpella.hmClients.get(i)!=null){
-									String temp = sock.getInetAddress().toString();
-									String[] temparr = temp.split("/");
-									String ip = temparr[1];
-									if(!simpella.hmClients.get(i).getIpAddress().trim().equals(ip.trim()))
-										try {
-											tempClientSock = (simpella.hmClients.get(i)).getSock();
-
-											//Use DataOutputStream for sending objects
-											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
-											clientOutput.write(pmf.convertToByteArray());
-											clientOutput.flush();
-
-										} catch (IOException e) {
-											e.printStackTrace();
-										}
-								}
-							}
+							routetable.put(pmf.guidToRawString(), ip);
 						}
 						else
 						{
 							System.out.println("Already have this ping on my table");
 						}
+						//System.out.println("Route table Key set = "+routetable.keySet());
+						for(int i=0;i<=simpella.hmClients.size();i++)
+						{
+							if(simpella.hmClients.get(i)!=null){
+
+								if(!simpella.hmClients.get(i).getIpAddress().trim().equals(ip.trim()))
+									try {
+										tempClientSock = (simpella.hmClients.get(i)).getSock();
+
+										//Use DataOutputStream for sending objects
+										DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+										clientOutput.write(pmf.convertToByteArray());
+										clientOutput.flush();
+
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+							}
+						}
+
+						//Sending Pong back to guy who sent ping
+						PongMessageFormat pongmsg = new PongMessageFormat();
+						pongmsg.setPort((short)sock.getLocalPort());
+						String localaddr = sock.getLocalAddress().toString();
+						String ip2 = localaddr.substring(1);
+						pongmsg.setIpAddress(ip2);
+
+						File mydir = new File(simpella.currentPath);
+						int numfiles = mydir.list().length;
+						int size = (int) mydir.length();
+						pongmsg.setFileSharingCount(numfiles);
+						pongmsg.setKbShared(size);
+
+						System.out.println("Putting pong in PMF with PORT:"+sock.getLocalPort()+" IP:"+ip2+" No of Files:"+numfiles+" Kb:"+size);
+						byte[] pongbyte = pongmsg.toByteArray();
+						pmf.setMessageType(Util.PONG);
+						pmf.setPayloadLen(pongbyte.length);
+						/*for(int i =0 ;i<pongbyte.length;i++)
+						{
+							System.out.println("Putting into PMF Payload"+i+":"+pongbyte[i]);
+						}*/
+
+						pmf.setPayload(pongbyte);
+						/*for(int i=0;i<pmf.getPayload().length;i++)
+						{
+							System.out.println("PAYLOAD I AM SENDING at"+i+":"+pmf.getPayload()[i]);
+						}
+
+						for(int i =0 ;i<pongbyte.length;i++)
+						{
+							System.out.println("At PMF Payload"+i+":"+pmf.getPayload()[i]);
+						}*/
+
+
+						String routeip = routetable.get(pmf.guidToRawString());
+
+						Socket tempClientSockpong ;
+
+						for(int i=0;i<=simpella.hmClients.size();i++)
+						{
+							if(simpella.hmClients.get(i)!=null){
+
+								if(simpella.hmClients.get(i).getIpAddress().trim().equals(routeip.trim()))
+								{
+									try {
+										//System.out.println("Sending PONG to"+routeip);
+										tempClientSockpong =  (simpella.hmClients.get(i)).getSock();
+										DataOutputStream clientOutput = new DataOutputStream(tempClientSockpong.getOutputStream());
+										clientOutput.write(pmf.convertToByteArray());
+										for(int j=0;j<pmf.convertToByteArray().length;j++)
+										{
+											System.out.println("SENDING KBPS at"+j+":"+pmf.convertToByteArray()[j+32]);
+										}
+										clientOutput.flush();
+
+									}catch (IOException e) {
+										e.printStackTrace();
+									}
+								}
+							}
+						}
+
+
+					}
+
+					//Check for PONG and stuff 
+					else if((byte)inputByteArray[16] == (byte)Util.PONG)
+					{
+						/*for(int k=0; k<36;k++)
+						{
+							System.out.println("Byte received at"+k+":"+inputByteArray[k]);
+						}*/
+						pmf = Util.convertByteArrayToParentMF(inputByteArray);
+
+						//checking to see if it is its own guid
+						for(int i =0;i<pmf.getGUID().length;i++)
+						{
+							if(simpella.servguid[i]==pmf.getGUID()[i])
+							{
+								isguid = true;
+							}
+							else
+							{
+								isguid = false;
+								break;
+							}
+						}
+
+						/*for(int i =0;i<pmf.getGUID().length;i++)
+						{
+							System.out.println("PONG GUID at"+i+":"+pmf.getGUID()[i]);
+
+						}
+
+						for(int i =0;i<pmf.getGUID().length;i++)
+						{
+							System.out.println("MY GUID at"+i+":"+simpella.servguid[i]);
+
+						}*/
+
+
+						/*if(Arrays.equals(simpella.servguid,pmf.getGUID()))
+						{
+							isguid = true;
+						}*/
+
+						if(isguid)
+						{
+							System.out.println("This is my GUID");
+
+
+							byte[] pongmsg = pmf.getPayload();
+
+							byte[] temp = new byte[2];
+							temp[0] = pongmsg[0];
+							temp[1] = pongmsg[1];
+							short port;
+							//To turn bytes to shorts as either big endian or little endian
+							//ByteBuffer.wrap(temp).order(ByteOrder.BIG_ENDIAN).asShortBuffer().get(port);
+
+							ByteBuffer bb = ByteBuffer.wrap(temp).order(ByteOrder.BIG_ENDIAN);
+							ShortBuffer sb = bb.asShortBuffer();
+							port = sb.get();
+							System.out.println("Port:"+port);
+
+							byte[] temp2 = new byte[4];
+							for(int i=0;i<4;i++)
+								temp2[i] = pongmsg[i+2];
+
+							String ipaddr = "";
+							for(int i =0 ;i<4; i++)
+								ipaddr = ipaddr + "."+(int)(temp2[i] & 255);
+
+							ipaddr = ipaddr.substring(0,ipaddr.length()-1);
+							ipaddr = ipaddr.substring(1); 
+							System.out.println("IP Address ="+ipaddr);
+							//To turn shorts to bytes as either big endian or little endian
+
+							//ByteBuffer.wrap(tempPort).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(port);
+							for(int i=0;i<4;i++)
+								temp2[i] = pongmsg[i+6];
+							bb= ByteBuffer.wrap(temp2).order(ByteOrder.LITTLE_ENDIAN);
+							int nofs= bb.getInt();
+							System.out.println("No. of files ="+nofs);
+
+							for (int i=0;i<4;i++)
+							{
+								System.out.println("KBS BYTE"+i+"="+pongmsg[i+10]);
+							}
+							for(int i=0;i<4;i++)
+								temp2[i] = pongmsg[i+10];
+							bb= ByteBuffer.wrap(temp2).order(ByteOrder.LITTLE_ENDIAN);
+							int kbs= bb.getInt();
+
+							System.out.println("Kbs ="+kbs);
+
+							System.out.println("Got this PONG in PMF with PORT:"+port+" IP:"+ipaddr+" No of Files:"+nofs+" Kb:"+kbs);
+							PongMessageFormat pongstore = new PongMessageFormat();
+
+							pongstore.setPort(port);
+							pongstore.setIpAddress(ipaddr);
+							pongstore.setFileSharingCount(nofs);
+							pongstore.setKbShared(kbs);
+
+							for(int j =0;j<ponglist.size();j++)
+							{
+								if(ponglist.get(j).getIpAddress().equals(ipaddr))
+								{
+									ponglist.remove(j);
+								}
+								System.out.println("Adding pong to my list:"+ipaddr);
+								ponglist.add(pongstore);
+
+							}
+
+							//TODO Extract the pong info from the message and put in table
+
+						}
+
+						//if not the same guid
+						else
+						{
+							System.out.println("This is not my GUID");
+
+							String ip = routetable.get(pmf.guidToRawString());
+
+							Socket tempClientSock ;
+
+							for(int i=0;i<=simpella.hmClients.size();i++)
+							{
+								if(simpella.hmClients.get(i)!=null){
+
+									if(simpella.hmClients.get(i).getIpAddress().trim().equals(ip.trim()))
+									{
+										try {
+											tempClientSock =  (simpella.hmClients.get(i)).getSock();
+											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+											clientOutput.write(pmf.convertToByteArray());
+											clientOutput.flush();
+
+										}catch (IOException e) {
+											e.printStackTrace();
+										}
+									}
+								}
+							}
+
+
+						}
 					}
 					else
 					{
-						System.out.println("type check for ping failed");
+						System.out.println("Pong check failed");
 					}
-					//}
-					//Check for PONG and stuff 
+
 					System.out.print("Simpella>>");
 				}
 			}
@@ -231,16 +463,16 @@ public class simpella {
 					if (input.startsWith("info")) {
 						try {
 							Socket sock = new Socket("8.8.8.8", 53);
-							System.out.println(String.format("%20s%20s%20s%20s",
+							System.out.println(String.format("%-20s%-30s%-10s%-10s",
 									"IP", "Hostname", "TCP port", "Download Port"));
 							System.out
 							.println("-------------------------------------------------------------------------");
 							InetAddress ipaddr = sock.getLocalAddress();
-							System.out.print((String.format("%-20s", ipaddr)));
-							System.out.print((String.format("%20s", ipaddr
+							System.out.print((String.format("%-20s", ipaddr.toString().substring(1))));
+							System.out.print((String.format("%-30s", ipaddr
 									.getLocalHost().getHostName())));
-							System.out.println((String.format("%20d", tcpport)));
-							System.out.println((String.format("%20d", dloadport)));
+							System.out.print((String.format("%-10d", tcpport)));
+							System.out.println((String.format("%-10d", dloadport)));
 						} catch (IOException e) {
 							System.out.println(e.getMessage());
 						}
@@ -298,8 +530,6 @@ public class simpella {
 						message.setMessageType((byte)Util.PING);
 						message.setTTL(7);
 						message.setHops(0);
-						message.setPayloadLen(0);
-						message.setPayload(null);
 
 						Socket tempClientSock ;
 
@@ -377,8 +607,8 @@ public class simpella {
 						System.out.println("scanning "+currentPath+" for files ...");
 						File mydir = new File(currentPath);
 						int numfiles = mydir.list().length;
-						//long size = FileUtils.sizeOfDirectory(mydir);
-						//System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
+						long size = mydir.getTotalSpace();
+						System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
 
 					}
 
@@ -391,9 +621,20 @@ public class simpella {
 							//Trim the last PORT number from the input string.
 							tcpPort = Integer.parseInt(splitArr2[1].trim());
 							Socket sock = new Socket(ipAddr, tcpPort);
+
+							//checking if the entered ip is ip or hostname and parsing accordingly
 							String ipstr = sock.getInetAddress().toString();
-							String[] temparr = ipstr.split("/");
-							String ip = temparr[1];
+							String ip ;
+							if(ipstr.contains("cse.buffalo.edu"))
+							{
+								String[] temparr = ipstr.split("/");
+								ip= temparr[1];
+							}
+							else
+							{
+								ip = ipstr.substring(1);
+							}
+
 							// For each socket we create and start off a new thread.
 							Client newCli = new Client();
 							newCli.setSock(sock);
@@ -413,17 +654,31 @@ public class simpella {
 								new ClientHandler(sock).start();
 								//Sending Ping Part
 								ParentMessageFormat message = new ParentMessageFormat();
+								/*for (int i =0;i<servguid.length;i++)
+								{
+									System.out.println("Initial GUID at SIMPELLA"+i+":"+servguid[i]);
+
+								}*/
 
 								message.setGUID(servguid);
+								/*for(int i =0;i<servguid.length;i++)
+								{
+									System.out.println("Gettin from msg GUID at SIMPELLA"+i+":"+message.getGUID()[i]);
+
+								}*/
 								message.setMessageType((byte)Util.PING);
 								message.setTTL(7);
 								message.setHops(0);
-								message.setPayloadLen(0);
-								message.setPayload(null);
 
 								servguid = message.getGUID().clone();
 
 								Socket tempClientSock ;
+
+
+								ParentMessageFormat pmf = new ParentMessageFormat();
+								pmf = pingutil.convertByteArrayToParentMF(message.convertToByteArray());
+
+								servguid =pmf.getGUID().clone();
 
 								for(int i=0;i<=hmClients.size();i++)
 								{
@@ -432,6 +687,10 @@ public class simpella {
 											tempClientSock =  (hmClients.get(i)).getSock();
 											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
 											clientOutput.write(message.convertToByteArray());
+											/*for(int j=0;j<message.convertToByteArray().length;j++)
+											{
+												System.out.println("UP at"+j+":"+message.convertToByteArray()[j]);
+											}*/
 											clientOutput.flush();
 
 										} catch (IOException e) {
