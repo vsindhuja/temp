@@ -3,6 +3,8 @@ package simpella;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,6 +19,7 @@ public class Util {
 
 	static int outCount = 0;
 	static int inCount = 0;
+	static int downloadCount = 0;
 
 	//Message Types 
 	public static byte PING = 0x00;
@@ -27,12 +30,36 @@ public class Util {
 	//Variables 
 	static byte[] data = new byte[16];
 	private static Random randNum = new Random();
+	
+	//File Sharing and related constants
+	public static String USER_AGENT = "User-Agent: Simpella \\r\\n";
+	public static String HOST = "Host : ";
+	public static String CONNECTION_TYPE = "Connection : Keep-Alive\\r\\n";
+	public static String RANGE = "Range : bytes= 0-\\r\\n";
+	public static String ACCEPT_FILE_SHARING_REQ = "HTTP/1.1 200 OK\\r\\n";
+	public static String REJECT_FILE_SHARING_REQ = "HTTP/1.1 503 File not found.\\r\\n";
+	public static String SERVER_INFO = "Server: Simpella0.6\\r\\n"; 
+	public static String CONTENT_TYPE = "Content-type: application/binary\\r\\n"; 
+	public static String CONTENT_LENGTH = "Content-length: ";
+	public static String SEND_FILE = "SENDFILE";
+	
+	public static String NEWLINE_TAB = "\r\n";
+	static ArrayList<SearchFiles> searchResult = new ArrayList();
+	static HashMap<String, String> fileIndexTofileNameMap = new HashMap<String, String>();
 
 	//Global Utility Methods
 
 	/* Keep in mind that only one instance of this class calls this method for one whole session fo running
 	 * to avoid any duplicate numbers. Multiple instances calling the Random function will not lead to uniqueness.
 	 */
+
+	public static ArrayList<SearchFiles> getSearchResult() {
+		return searchResult;
+	}
+
+	public static void setSearchResult(ArrayList<SearchFiles> searchResult) {
+		Util.searchResult = searchResult;
+	}
 
 	public static short[] generateGUID(){
 		short[] data = new short[16];

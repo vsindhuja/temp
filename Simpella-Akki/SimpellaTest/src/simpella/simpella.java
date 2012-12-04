@@ -1,6 +1,7 @@
 package simpella;
 
 import java.io.*; 
+import java.lang.reflect.Field;
 import java.net.*; 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -68,7 +69,25 @@ class Server extends Thread{
 								output.println(Util.CONNECTION_ACCEPTED);
 								System.out.print("Simpella>>");
 
-							} 
+							} else if(incomingMess.startsWith("GET /get/")){/*
+								FileSharing fs = new FileSharing(true);//Constructor to Send a file, NOT for Receiving
+								String[] str = incomingMess.split("/");
+								for (int i=0;i<str.length;i++)
+									System.out.println(str[i]);
+
+								fs.setFileName(Util.fileIndexTofileNameMap.get(str[2]));
+
+								String fileName = str[3].substring(0,str[3].length()-4);
+								PrintStream ps = new PrintStream (socket.getOutputStream());
+								if(fileName.equals(fs.getFileName())){
+									ps.println(fs.constructFreshResponse(true)); //Send a response of acknowledgement
+									fs.setFile();
+									fs.fileSend(socket); //Send the file using the same socket as this is a direct incoming connection.
+								}*
+								else{
+									ps.println(fs.constructFreshResponse(false));
+								}
+							 */}
 						}
 					}catch(IOException ioe){
 						/*
@@ -445,6 +464,8 @@ public class simpella {
 
 			Thread t = new Server(tcpport);
 			t.start();
+			Thread fileThread = new FileSharingServer(dloadport);
+			fileThread.start();
 
 		} catch (IOException e) {
 			System.out.println("Exception on new Server Socket" + e);
@@ -730,6 +751,50 @@ public class simpella {
 								e.printStackTrace();
 							}
 						}
+					}else if(input.startsWith("download")){
+						try{
+							int filenum = Integer.parseInt(input.substring(8).trim());
+							//Initiate a request for the file.
+							FileSharing fileShare = new FileSharing(); //Constructor to Receive a file, NOT send a file.
+							//FileSharing fileShare = new FileSharing(new File(sfs.fileName), input, sfs.getIpAddress(), sfs.getPort());
+							fileShare.recvFile=true;
+							fileShare.ipaddString = "localhost";	//CHANGE
+							fileShare.port = 3300;	//hardcoded CHANGE
+							Socket temp = fileShare.establishConn();
+							boolean accepted = false;
+							//send request to remote user for file.
+							try {
+								PrintStream ps = new PrintStream(temp.getOutputStream());
+								ps.println(fileShare.constructFreshReq());
+
+								BufferedReader br = new BufferedReader(new InputStreamReader(temp.getInputStream()));
+								String response ="";
+
+								br.mark(0);
+
+								if((response = br.readLine())!=null){
+									if(response.equalsIgnoreCase(Util.ACCEPT_FILE_SHARING_REQ)){
+										accepted = true;
+										ps.println("ACCEPTED");
+										while((response = br.readLine())!=null){
+											if(response.startsWith(Util.CONTENT_LENGTH)){
+												fileShare.fileSize = Integer.parseInt(response.substring(Util.CONTENT_LENGTH.length()));
+												br.reset();
+											}
+
+										}
+									}
+								}
+							} catch (IOException e) {
+								//Dont do anything. This exception is coming from the reset method of BufferedReader.
+								System.out.print("");
+							}
+							if(accepted){
+								fileShare.start();
+							}
+						}catch(NumberFormatException nfe){
+							System.out.println("Incorrect input");
+						}
 					}
 
 					else {
@@ -744,3 +809,84 @@ public class simpella {
 	}
 }
 
+class FileSharingServer extends Thread{
+	public static ServerSocket dloadServSock;
+	public Socket socket;
+	public static int count = 0;
+
+	public FileSharingServer (Socket socket){
+		this.socket = socket;
+	}
+
+	public FileSharingServer(int dloadPort) throws IOException{
+		try {
+			dloadServSock = new ServerSocket(dloadPort);
+		} catch (IOException e) {
+			System.out.println("Exception on download Server Socket" + e);
+		}
+	}
+	//My file is to be read and written on the Output Stream.
+	public void run(){
+		Socket socket;
+		try{
+			while(true){
+				socket = dloadServSock.accept();  // accept connection
+				PrintStream output = new PrintStream(socket.getOutputStream());
+				BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				String incomingMess = "";
+				Boolean fileAcceptStatus = false;
+
+				if(Util.downloadCount==0){
+					fileAcceptStatus = true;
+				}
+				if (fileAcceptStatus) {
+					try{
+						//input.mark(0);
+						if((incomingMess = input.readLine()).startsWith("GET /get/")){
+							Util.downloadCount++;
+							FileSharing fs = null;
+
+							fs = new FileSharing();		//Constructor to Send a file, NOT for Receiving
+							//Send response to server.
+							fs.fileSize = 450560;
+							output.println(fs.constructFreshResponse(true));
+							String[] str = incomingMess.split("/");
+							for (int i=0;i<str.length;i++)
+								System.out.println("**" + str[i]);
+
+							//File INDEX
+							//(Util.fileIndexTofileNameMap.get(str[2]));
+
+							String fileName = str[3].substring(0,str[3].length()-4).trim();
+
+							fs.setFileName(fileName);
+							fs.file = new File(simpella.currentPath + "/" + fileName);
+							
+							while ((incomingMess = input.readLine()) != null) {
+								if(incomingMess.equalsIgnoreCase("ACCEPTED")){
+									PrintStream ps = new PrintStream (socket.getOutputStream());
+									//if(fileName.trim().equals(fs.getFileName().trim())){
+									fs.fileSend(socket); //Send the file using the same socket as this is a direct incoming connection.
+								}
+							}
+						}
+					}catch(IOException ioe){
+						/*
+						 * Do nothing, since this exception is coming from the
+						 * BufferedReader's reset method call. and doesn't bother the
+						 * functionality.
+						 */
+						System.out.println("");
+					}
+					Util.downloadCount--;
+				}
+				else {
+					System.out.println(" ");
+					output.println(Util.REJECT_FILE_SHARING_REQ);
+				}
+			}
+		}catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
+}
