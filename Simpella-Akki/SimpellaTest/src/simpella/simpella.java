@@ -344,7 +344,7 @@ class ClientHandler extends Thread{
 							//ByteBuffer.wrap(tempPort).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(port);
 							for(int i=0;i<4;i++)
 								temp2[i] = pongmsg[i+6];
-							bb= ByteBuffer.wrap(temp2).order(ByteOrder.LITTLE_ENDIAN);
+							bb= ByteBuffer.wrap(temp2).order(ByteOrder.BIG_ENDIAN);
 							int nofs= bb.getInt();
 							System.out.println("No. of files ="+nofs);
 
@@ -354,7 +354,7 @@ class ClientHandler extends Thread{
 							}
 							for(int i=0;i<4;i++)
 								temp2[i] = pongmsg[i+10];
-							bb= ByteBuffer.wrap(temp2).order(ByteOrder.LITTLE_ENDIAN);
+							bb= ByteBuffer.wrap(temp2).order(ByteOrder.BIG_ENDIAN);
 							int kbs= bb.getInt();
 
 							System.out.println("Kbs ="+kbs);
@@ -421,21 +421,23 @@ class ClientHandler extends Thread{
 						//TODO Add the size check validations here
 
 						//******NEEDS TO BE ITERATED BEFORE PROCEEDING ELSE IT WILL THROW ARRAY INDEX OUT OF BOUNDS
-						byte[] temp = new byte[pmf.getPayload().length-2];
+						byte[] temp = new byte[pmf.getPayloadLen()];
 						//NEEDS TO BE ITERATED BEFORE PROCEEDING ELSE IT WILL THROW ARRAY INDEX OUT OF BOUNDS*******
-						
-						
+
+						temp = pmf.getPayload();
+
 						int querylen = temp.length - 2;
 
 						String query;
+						byte[] temp2 = new byte[querylen];
 
 						for(int j=0;j<querylen;j++)
 						{
-							temp[j] = inputByteArray[j+2];
+							temp2[j] = temp[j+2];
 						}
 						query = new String(temp);
 
-						System.out.println("Query i got"+query);
+						System.out.println("Query i got "+query);
 
 						String[] splitArr = query.split(" ");
 
@@ -445,13 +447,19 @@ class ClientHandler extends Thread{
 						File[] fileNames = f.listFiles();
 						for(int i=0;i<filelist.length;i++)
 						{
-							System.out.println("Files I have : " + fileNames[i].getName() 
-									+ " Path " + fileNames[i].getAbsolutePath() + "Size : " + fileNames[i].length());
+							String[] mp3 = fileNames[i].getName().split(".");
+							String fullname = mp3[0];
+							String[] names = fullname.split(" ");
+							/*System.out.println("Files I have : " + fileNames[i].getName() 
+									+ " Path " + fileNames[i].getAbsolutePath() + "Size : " + fileNames[i].length());*/
 							for(int j=0;j<splitArr.length;j++)
 							{
-								if(filelist[i].equalsIgnoreCase(splitArr[j]))
+								for(int k=0;k<names.length;k++)
 								{
-									System.out.println("Match"+filelist[i]);
+									if(names[k].equalsIgnoreCase((splitArr[j]))) 
+									{
+										System.out.println("Match"+fileNames[i].getName());
+									}
 								}
 							}
 						}
@@ -825,24 +833,29 @@ public class simpella {
 
 						String search = input.substring(5, input.length());
 						ParentMessageFormat pmf = new ParentMessageFormat();
-						int querylen = 2+splitArr.length;
+
+						byte[] query2;
+						query2 = search.getBytes();
+						int querylen = 2+query2.length;
+
 						byte[] query = new byte[querylen];
 
 						query[0] = 0;
 						query[1] = 0;
 
 						System.out.println("Searching for "+search+" on the simpella network");
-						query = search.getBytes();
-						/*for(int i=0;i<querylen;i++)
+
+						for(int i=0;i<query2.length;i++)
 						{
-							query[i+2] = Byte.valueOf(splitArr[i].trim());
-						}*/
+							query[i+2] = query2[i];
+						}
 
 						pmf.setGUID(servguid);
 						pmf.setMessageType(Util.QUERY);
 						pmf.setTTL(7);
 						pmf.setHops(0);
 						pmf.setPayload(query);
+						pmf.setPayloadLen(querylen+23);
 
 						Socket tempClientSock;
 
