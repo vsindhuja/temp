@@ -138,7 +138,6 @@ class ClientHandler extends Thread{
 	public void run(){
 
 		try{
-
 			DataInputStream obis = new DataInputStream(sock.getInputStream());			
 			ParentMessageFormat pmf = new ParentMessageFormat();
 			byte[] inputByteArray = new byte[4096];
@@ -255,7 +254,7 @@ class ClientHandler extends Thread{
 										tempClientSockpong =  (simpella.hmClients.get(i)).getSock();
 										DataOutputStream clientOutput = new DataOutputStream(tempClientSockpong.getOutputStream());
 										clientOutput.write(pmf.convertToByteArray());
-										for(int j=0;j<pmf.convertToByteArray().length;j++)
+										for(int j=0;j<pmf.convertToByteArray().length-32;j++)
 										{
 											System.out.println("SENDING KBPS at"+j+":"+pmf.convertToByteArray()[j+32]);
 										}
@@ -267,8 +266,6 @@ class ClientHandler extends Thread{
 								}
 							}
 						}
-
-
 					}
 
 					//*******************************PONG ****************************************//
@@ -405,7 +402,6 @@ class ClientHandler extends Thread{
 											DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
 											clientOutput.write(pmf.convertToByteArray());
 											clientOutput.flush();
-
 										}catch (IOException e) {
 											e.printStackTrace();
 										}
@@ -444,8 +440,11 @@ class ClientHandler extends Thread{
 						File f = new File(simpella.currentPath);
 
 						String[] filelist = f.list();
+						File[] fileNames = f.listFiles();
 						for(int i=0;i<filelist.length;i++)
 						{
+							System.out.println("Files I have : " + fileNames[i].getName() 
+									+ " Path " + fileNames[i].getAbsolutePath() + "Size : " + fileNames[i].length());
 							for(int j=0;j<splitArr.length;j++)
 							{
 								if(filelist[i].equalsIgnoreCase(splitArr[j]))
@@ -477,7 +476,7 @@ public class simpella {
 
 	static HashMap<String,SearchFiles> myfiles = new HashMap<String,SearchFiles>();
 
-	static String currentPath = "/home/csgrad/sindhuja/MNCProject2";
+	static String currentPath = "";
 
 	public static short[] servguid;
 
@@ -673,11 +672,6 @@ public class simpella {
 									sf.setSize((int)f.listFiles()[i].length());
 									myfiles.put(sf.getFileIndex(), sf);
 								}
-
-
-
-
-
 							}
 
 							//for checking which is the current shared directory
@@ -848,7 +842,7 @@ public class simpella {
 						pmf.setHops(0);
 						pmf.setPayload(query);
 
-						Socket tempClientSock = new Socket();
+						Socket tempClientSock;
 
 						for(int i=0;i<=hmClients.size();i++)
 						{
@@ -857,22 +851,17 @@ public class simpella {
 									tempClientSock =  (hmClients.get(i)).getSock();
 									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
 									clientOutput.write(pmf.convertToByteArray());
+									clientOutput.flush();
 									for(int j=0;j<pmf.convertToByteArray().length;j++)
 									{
 										System.out.println("UP at"+j+":"+pmf.convertToByteArray()[j]);
 									}
-									clientOutput.flush();
 
 								} catch (IOException e) {
 									e.printStackTrace();
 								}
 							}
 						}
-
-
-
-
-
 					}
 
 					else if(input.startsWith("download")){
