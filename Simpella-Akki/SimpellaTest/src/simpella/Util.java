@@ -233,4 +233,41 @@ public class Util {
 		}
 		return byteStream.toByteArray();
 	}
+	
+	public static int generateRandomNumber(){
+		Random rand = new Random();
+		return rand.nextInt();
+	}
+	
+	public static int toInteger(byte bytearr[], int start, int len)  {
+        
+        int sh = 0;
+
+       if(len < 4) {
+            
+            if(len == 1){ 
+                sh = (int)((bytearr[start] & 0xFF));
+            } 
+            else if(len == 2) {
+                sh = (int)((bytearr[start] & 0xFF) | bytearr[start+1]<<8);
+            }
+            else if(len == 3) {
+                sh = (int)((bytearr[start] & 0xFF) | bytearr[start+1]<<8 | bytearr[start+2]<<16 );
+            }
+            return sh;
+        }
+        
+        for(int i = start; i < start + len; i+=4) {
+            sh = (int)((bytearr[i] & 0xFF) | bytearr[i+1]<<8 | bytearr[i+2]<<16 | bytearr[i+3]<<32);
+            
+        }
+    
+        return sh;
+	}
+    public static byte[] toBytes(int s)
+    {
+        return new byte[]{  (byte)(s & 0x000000FF),(byte)((s & 0x0000FF00)>>8),
+                            (byte)((s & 0x00FF0000)>>16),(byte)((s & 0xFF000000)>>32)};
+    }
+	
 }
