@@ -181,7 +181,7 @@ public class Util {
 		payloadLen += (byte3 << 16);
 		payloadLen += (byte4 << 24);
 		pmf.setPayloadLen(payloadLen);
-
+System.out.println("payload LEN " + payloadLen);
 		byte[] payload = new byte[pmf.getPayloadLen()];
 
 		// Write the payload

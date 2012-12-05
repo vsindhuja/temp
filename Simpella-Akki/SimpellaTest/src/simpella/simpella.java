@@ -420,9 +420,11 @@ class ClientHandler extends Thread{
 
 						//TODO Add the size check validations here
 
-						byte[] temp;
-						temp = pmf.getPayload().clone();
-
+						//******NEEDS TO BE ITERATED BEFORE PROCEEDING ELSE IT WILL THROW ARRAY INDEX OUT OF BOUNDS
+						byte[] temp = new byte[pmf.getPayload().length-2];
+						//NEEDS TO BE ITERATED BEFORE PROCEEDING ELSE IT WILL THROW ARRAY INDEX OUT OF BOUNDS*******
+						
+						
 						int querylen = temp.length - 2;
 
 						String query;
@@ -476,7 +478,7 @@ public class simpella {
 
 	static HashMap<String,SearchFiles> myfiles = new HashMap<String,SearchFiles>();
 
-	static String currentPath = "";
+	static String currentPath = "/Users/akshayviswanathan/Desktop/csgrad/sindhuja/MNCProject2";
 
 	public static short[] servguid;
 
@@ -856,7 +858,6 @@ public class simpella {
 									{
 										System.out.println("UP at"+j+":"+pmf.convertToByteArray()[j]);
 									}
-
 								} catch (IOException e) {
 									e.printStackTrace();
 								}
