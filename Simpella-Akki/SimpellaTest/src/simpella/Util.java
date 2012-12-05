@@ -30,7 +30,7 @@ public class Util {
 	//Variables 
 	static byte[] data = new byte[16];
 	private static Random randNum = new Random();
-	
+
 	//File Sharing and related constants
 	public static String USER_AGENT = "User-Agent: Simpella \\r\\n";
 	public static String HOST = "Host : ";
@@ -42,9 +42,9 @@ public class Util {
 	public static String CONTENT_TYPE = "Content-type: application/binary\\r\\n"; 
 	public static String CONTENT_LENGTH = "Content-length: ";
 	public static String SEND_FILE = "SENDFILE";
-	
+
 	public static String NEWLINE_TAB = "\r\n";
-	static ArrayList<SearchFiles> searchResult = new ArrayList();
+	static ArrayList<SearchFiles> searchResult = new ArrayList<SearchFiles>();
 	static HashMap<String, String> fileIndexTofileNameMap = new HashMap<String, String>();
 	static String[] existingFiles;
 
@@ -81,6 +81,20 @@ public class Util {
 			}
 		}
 		return data;
+	}
+
+
+	public static String generateFileIndex(){
+		byte [] index = { (byte)(Math.random() * 0xFF),
+				(byte)(Math.random() * 0xFF),
+				(byte)(Math.random() * 0xFF),
+				(byte)(Math.random() * 0xFF),
+		};
+
+		String ind = new String(index);
+
+		return ind;
+
 	}
 
 	public static String convert16bytesIntoInteger(String numToBeConverted){
@@ -216,7 +230,7 @@ public class Util {
 	public static byte[] convertIntToByteArray(int num){
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		DataOutputStream dStream = new DataOutputStream(byteStream);
-		
+
 		// Write the Payload size in little-endian
 		int num1 = 0x000000FF & num;
 		int num2 = (0x0000FF00 & num) >> 8;

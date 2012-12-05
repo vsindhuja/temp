@@ -147,11 +147,12 @@ class ClientHandler extends Thread{
 			{
 				if(!(inputByteArray[0] == 10 && inputByteArray[1] == 0))
 				{
-					/*for(int i=0;i<23;i++){
+					for(int i=0;i<30;i++){
 						//inputByteArray[i] =  (byte) obis.readUnsignedByte();
 						System.out.println("CH : Value at byte"+i+"="+inputByteArray[i]);
+					}
 
-					}*/
+					//*******************************PING ****************************************//
 
 					if((byte)inputByteArray[16] == (byte)Util.PING){
 						pmf = Util.convertByteArrayToParentMF(inputByteArray);
@@ -270,7 +271,7 @@ class ClientHandler extends Thread{
 
 					}
 
-					//Check for PONG and stuff 
+					//*******************************PONG ****************************************//
 					else if((byte)inputByteArray[16] == (byte)Util.PONG)
 					{
 						/*for(int k=0; k<36;k++)
@@ -415,9 +416,45 @@ class ClientHandler extends Thread{
 
 						}
 					}
-					else
+
+					//*******************************QUERY ****************************************//
+					else if((byte)inputByteArray[16] == (byte)Util.QUERY)
 					{
-						System.out.println("Pong check failed");
+						pmf = Util.convertByteArrayToParentMF(inputByteArray);
+
+						//TODO Add the size check validations here
+
+						byte[] temp;
+						temp = pmf.getPayload().clone();
+
+						int querylen = temp.length - 2;
+
+						String query;
+
+						for(int j=0;j<querylen;j++)
+						{
+							temp[j] = inputByteArray[j+2];
+						}
+						query = new String(temp);
+
+						System.out.println("Query i got"+query);
+
+						String[] splitArr = query.split(" ");
+
+						File f = new File(simpella.currentPath);
+
+						String[] filelist = f.list();
+						for(int i=0;i<filelist.length;i++)
+						{
+							for(int j=0;j<splitArr.length;j++)
+							{
+								if(filelist[i].equalsIgnoreCase(splitArr[j]))
+								{
+									System.out.println("Match"+filelist[i]);
+								}
+							}
+						}
+
 					}
 
 					System.out.print("Simpella>>");
@@ -438,9 +475,13 @@ public class simpella {
 
 	static HashMap<Integer,Client> hmClients = new HashMap<Integer, Client>();
 
+	static HashMap<String,SearchFiles> myfiles = new HashMap<String,SearchFiles>();
+
 	static String currentPath = "/home/csgrad/sindhuja/MNCProject2";
 
 	public static short[] servguid;
+
+	static String myaddr;
 
 
 	public static Boolean handshake = false;
@@ -456,6 +497,7 @@ public class simpella {
 		try {
 			Socket sock1 = new Socket("8.8.8.8", 53);
 			InetAddress ipaddr = sock1.getLocalAddress();
+			myaddr = ipaddr.toString().substring(1);
 			System.out.println("Local IP:" + ipaddr);
 			System.out.println("Host Name:"
 					+ ipaddr.getLocalHost().getHostName());
@@ -617,6 +659,25 @@ public class simpella {
 										int a = 1/0;
 									}
 								}
+
+								File f = new File(currentPath);
+								String[] fname =f.list();
+								SearchFiles sf = new SearchFiles();
+
+								for(int i=0;i<fname.length;i++)
+								{
+									sf.setFileIndex(Util.generateFileIndex());
+									sf.setFileName(fname[i]);
+									sf.setIpAddress(myaddr);
+									sf.setPort(dloadport);
+									sf.setSize((int)f.listFiles()[i].length());
+									myfiles.put(sf.getFileIndex(), sf);
+								}
+
+
+
+
+
 							}
 
 							//for checking which is the current shared directory
@@ -639,7 +700,7 @@ public class simpella {
 						File mydir = new File(currentPath);
 						int numfiles = mydir.list().length;
 						mydir.list();
-						long size = mydir.getTotalSpace();
+						long size = mydir.length();
 						System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
 						Util.existingFiles = new String[numfiles];
 
@@ -763,7 +824,58 @@ public class simpella {
 								e.printStackTrace();
 							}
 						}
-					}else if(input.startsWith("download")){
+					}else if(input.startsWith("find")){
+						String[] splitArr = input.substring(5).split(" ");
+
+						String search = input.substring(5, input.length());
+						ParentMessageFormat pmf = new ParentMessageFormat();
+						int querylen = 2+splitArr.length;
+						byte[] query = new byte[querylen];
+
+						query[0] = 0;
+						query[1] = 0;
+
+						System.out.println("Searching for "+search+" on the simpella network");
+						query = search.getBytes();
+						/*for(int i=0;i<querylen;i++)
+						{
+							query[i+2] = Byte.valueOf(splitArr[i].trim());
+						}*/
+
+						pmf.setGUID(servguid);
+						pmf.setMessageType(Util.QUERY);
+						pmf.setTTL(7);
+						pmf.setHops(0);
+						pmf.setPayload(query);
+
+						Socket tempClientSock = new Socket();
+
+						for(int i=0;i<=hmClients.size();i++)
+						{
+							if(hmClients.get(i)!=null){
+								try {
+									tempClientSock =  (hmClients.get(i)).getSock();
+									DataOutputStream clientOutput = new DataOutputStream(tempClientSock.getOutputStream());
+									clientOutput.write(pmf.convertToByteArray());
+									for(int j=0;j<pmf.convertToByteArray().length;j++)
+									{
+										System.out.println("UP at"+j+":"+pmf.convertToByteArray()[j]);
+									}
+									clientOutput.flush();
+
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						}
+
+
+
+
+
+					}
+
+					else if(input.startsWith("download")){
 						try{
 							int filenum = Integer.parseInt(input.substring(8).trim());
 							//Initiate a request for the file.
@@ -873,7 +985,7 @@ class FileSharingServer extends Thread{
 
 							fs.setFileName(fileName);
 							fs.file = new File(simpella.currentPath + "/" + fileName);
-							
+
 							while ((incomingMess = input.readLine()) != null) {
 								if(incomingMess.equalsIgnoreCase("ACCEPTED")){
 									PrintStream ps = new PrintStream (socket.getOutputStream());
