@@ -607,9 +607,9 @@ public class simpella {
 						String[] splitArr = input.split(" ");
 
 						//info c
-						if(splitArr[1].equalsIgnoreCase("c"))
+						if(splitArr[1].equalsIgnoreCase("h"))
 						{
-							try {
+							/*try {
 								Socket sock = new Socket("8.8.8.8", 53);
 								System.out.println(String.format("%-20s%-30s%-10s%-10s",
 										"IP", "Hostname", "TCP port", "Download Port"));
@@ -623,12 +623,17 @@ public class simpella {
 								System.out.println((String.format("%-10d", dloadport)));
 							} catch (IOException e) {
 								System.out.println(e.getMessage());
-							}
+							}*/
+							
+							System.out.println("HOST STATS:");
+							System.out.println("----------------");
+							
 						}
 
 						//info d 
 						if(splitArr[1].equalsIgnoreCase("d"))
 						{
+							
 
 						}
 
