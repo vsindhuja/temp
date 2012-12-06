@@ -48,6 +48,9 @@ public class Util {
 	static HashMap<String, String> fileIndexTofileNameMap = new HashMap<String, String>();
 	static String[] existingFiles;
 	
+	//For the List command.
+	static String[] listFoundFileNames;
+	
 	//Global Utility Methods
 
 	/* Keep in mind that only one instance of this class calls this method for one whole session fo running
