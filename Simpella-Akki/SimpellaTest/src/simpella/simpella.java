@@ -445,7 +445,21 @@ class ClientHandler extends Thread{
 
 						System.out.println("Query i got "+query);
 
+<<<<<<< HEAD
 						if(simpella.currentPath!=null)
+=======
+						String[] splitArr = query.split(" ");
+
+						File f = new File(simpella.currentPath);
+
+						String[] filelist = f.list();
+						File[] fileNames = f.listFiles();
+						int fileCount = 0;
+						QueryHitMessage qhm = new QueryHitMessage();
+						ArrayList<SearchFiles> sfl = new ArrayList<SearchFiles>();
+						
+						for(int i=0;i<filelist.length;i++)
+>>>>>>> 76350556fedfdfc45925bef3dc0e301e871307bd
 						{
 							String[] splitArr = query.split(" ");
 
@@ -459,6 +473,7 @@ class ClientHandler extends Thread{
 
 							for(int i=0;i<filelist.length;i++)
 							{
+<<<<<<< HEAD
 								String[] mp3 = fileNames[i].getName().split("\\.");
 								String fullname = mp3[0];
 								String[] names = fullname.split(" ");
@@ -491,6 +506,36 @@ class ClientHandler extends Thread{
 									}
 								}
 							}
+=======
+								if(names.length>0){
+									for(int k=0;k<names.length;k++)
+									{
+										if(names[k].toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))){
+											System.out.println("Match"+fileNames[i].getName());
+											SearchFiles sf = searchMyFiles(fileNames[i].getName());
+											sfl.add(sf);
+											fileCount++;
+										}
+									}
+								}
+								if(fullname.toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))) 
+								{
+									System.out.println("Match"+fileNames[i].getName());
+									SearchFiles sf = searchMyFiles(fileNames[i].getName());
+									sfl.add(sf);
+									fileCount++;
+								}
+							}
+						}
+						SearchFiles[] search = null;
+						sfl.toArray(search);
+						
+						qhm.setSearchFiles(search);
+						qhm.setNoOfHits((byte)fileCount);
+						qhm.setAccpetingPort(simpella.dloadport);
+						qhm.setIpAddress(sock.getInetAddress().toString().substring(1).getBytes());
+						qhm.setServentID(Util.generateGUID());
+>>>>>>> 76350556fedfdfc45925bef3dc0e301e871307bd
 
 							SearchFiles[] search= null;
 							sfl.toArray(search);
@@ -603,6 +648,7 @@ public class simpella {
 				System.out.print("Simpella>>");
 				if (scan.hasNext()) {
 					input = scan.nextLine();
+<<<<<<< HEAD
 					if (input.startsWith("info")) {
 						String[] splitArr = input.split(" ");
 
@@ -628,6 +674,23 @@ public class simpella {
 							System.out.println("HOST STATS:");
 							System.out.println("----------------");
 							
+=======
+					if (input.toLowerCase().startsWith("info")) {
+						try {
+							Socket sock = new Socket("8.8.8.8", 53);
+							System.out.println(String.format("%-20s%-30s%-10s%-10s",
+									"IP", "Hostname", "TCP port", "Download Port"));
+							System.out
+							.println("-------------------------------------------------------------------------");
+							InetAddress ipaddr = sock.getLocalAddress();
+							System.out.print((String.format("%-20s", ipaddr.toString().substring(1))));
+							System.out.print((String.format("%-30s", ipaddr
+									.getLocalHost().getHostName())));
+							System.out.print((String.format("%-10d", tcpport)));
+							System.out.println((String.format("%-10d", dloadport)));
+						} catch (IOException e) {
+							System.out.println(e.getMessage());
+>>>>>>> 76350556fedfdfc45925bef3dc0e301e871307bd
 						}
 
 						//info d 
@@ -639,7 +702,7 @@ public class simpella {
 
 					}
 
-					else if (input.startsWith("show")) {
+					else if (input.toLowerCase().startsWith("show")) {
 						System.out.println(String.format("%10s%10s%20s",
 								"conn. ID", "Host", "TCP port"));
 						System.out
@@ -657,7 +720,7 @@ public class simpella {
 							}
 						}
 						System.out.println("\r\n");
-					}else if(input.startsWith("send")){
+					}else if(input.toLowerCase().startsWith("send")){
 						String[] splitArr ;
 						if(input.substring(5)!=null){
 							splitArr = input.substring(5).split(" ");
@@ -683,7 +746,7 @@ public class simpella {
 							System.out.println("More parameters required to run the command.");
 						}
 					}
-					else if(input.startsWith("update")){
+					else if(input.toLowerCase().startsWith("update")){
 
 						ParentMessageFormat message = new ParentMessageFormat();
 
@@ -709,7 +772,7 @@ public class simpella {
 						}
 					}
 
-					else if (input.startsWith("share"))
+					else if (input.toLowerCase().startsWith("share"))
 					{
 						String[] splitArr = input.substring(6).split(" ");
 						String mypath;
@@ -760,8 +823,6 @@ public class simpella {
 								{
 									sf.setFileIndex(Util.generateFileIndex());
 									sf.setFileName(fname[i]);
-									sf.setIpAddress(myaddr);
-									sf.setPort(dloadport);
 									sf.setSize((int)f.listFiles()[i].length());
 									myfiles.put(sf.getFileIndex(), sf);
 								}
@@ -784,7 +845,7 @@ public class simpella {
 						}
 					}
 
-					else if (input.startsWith("scan"))
+					else if (input.toLowerCase().startsWith("scan"))
 					{
 
 						System.out.println("scanning "+currentPath+" for files ...");
@@ -797,7 +858,7 @@ public class simpella {
 
 					}
 
-					else if(input.startsWith("open")){
+					else if(input.toLowerCase().startsWith("open")){
 						try {
 							String[] splitArr = input.substring(5).split(" ");
 
@@ -898,7 +959,7 @@ public class simpella {
 						} 
 					}
 
-					else if(input.startsWith("disconnect")){
+					else if(input.toLowerCase().startsWith("disconnect")){
 						if(!(input.substring(10)).equals("")){
 							int conID = Integer.parseInt(input.substring(10).trim());
 							try {
@@ -915,7 +976,7 @@ public class simpella {
 								e.printStackTrace();
 							}
 						}
-					}else if(input.startsWith("find")){
+					}else if(input.toLowerCase().startsWith("find")){
 						String[] splitArr = input.substring(5).split(" ");
 
 						String search = input.substring(5, input.length());
@@ -965,7 +1026,7 @@ public class simpella {
 						}
 					}
 
-					else if(input.startsWith("download")){
+					else if(input.toLowerCase().startsWith("download")){
 						try{
 							int filenum = Integer.parseInt(input.substring(8).trim());
 							//Initiate a request for the file.
@@ -1010,7 +1071,17 @@ public class simpella {
 							System.out.println("Incorrect input");
 						}
 					}
-
+					else if(input.toLowerCase().startsWith("list")){
+						System.out.println("Files searched for");
+						for(int i=0;i<Util.listFoundFileNames.length;i++)
+							System.out.println(Util.listFoundFileNames[i]);
+					}
+					else if(input.toLowerCase().startsWith("clear")){
+						
+					}
+					else if(input.toLowerCase().startsWith("monitor")){
+						
+					}
 					else {
 						System.out.println("Incorrect Input");
 					}
