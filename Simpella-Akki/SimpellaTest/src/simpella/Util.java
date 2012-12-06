@@ -47,7 +47,7 @@ public class Util {
 	static ArrayList<SearchFiles> searchResult = new ArrayList<SearchFiles>();
 	static HashMap<String, String> fileIndexTofileNameMap = new HashMap<String, String>();
 	static String[] existingFiles;
-
+	
 	//Global Utility Methods
 
 	/* Keep in mind that only one instance of this class calls this method for one whole session fo running

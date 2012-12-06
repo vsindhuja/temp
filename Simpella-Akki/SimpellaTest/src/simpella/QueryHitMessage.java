@@ -3,17 +3,23 @@ package simpella;
 public class QueryHitMessage {
 
 	private static byte noOfHits;
-	private static byte accpetingPort;
+	private static short accpetingPort;
 	private static byte[] ipAddress = new byte[4];
-	private static int speed_RespondinHost = 0; // Needs to be stored in Big Endian format.
+	private static int speed_RespondinHost = 10000; // Needs to be stored in Big Endian format.
 	private static String serventID="";
-	private static ResultSet resultSet = new ResultSet();
-	
-	public static ResultSet getResultSet() {
-		return resultSet;
+	private static SearchFiles searchFiles = new SearchFiles();
+
+	public static short getAccpetingPort() {
+		return accpetingPort;
 	}
-	public static void setResultSet(ResultSet resultSet) {
-		QueryHitMessage.resultSet = resultSet;
+	public static void setAccpetingPort(short accpetingPort) {
+		QueryHitMessage.accpetingPort = accpetingPort;
+	}
+	public static SearchFiles getSearchFiles() {
+		return searchFiles;
+	}
+	public static void setSearchFiles(SearchFiles searchFiles) {
+		QueryHitMessage.searchFiles = searchFiles;
 	}
 	public static String getServentID() {
 		return serventID;
@@ -27,20 +33,15 @@ public class QueryHitMessage {
 	public static void setNoOfHits(byte noOfHits) {
 		QueryHitMessage.noOfHits = noOfHits;
 	}
-	public static byte getAccpetingPort() {
-		return accpetingPort;
-	}
-	public static void setAccpetingPort(byte accpetingPort) {
-		QueryHitMessage.accpetingPort = accpetingPort;
-	}
+	
 	public static byte[] getIpAddress() {
 		return ipAddress;
 	}
 	public static void setIpAddress(byte[] ipAddress) {
 		QueryHitMessage.ipAddress = ipAddress;
 	}
-	public static int getSpeed_RespondinHost() {
-		return speed_RespondinHost;
+	public static byte[] getSpeed_RespondinHost() {
+		return Util.convertIntToByteArray(speed_RespondinHost);
 	}
 	public static void setSpeed_RespondinHost(int speed_RespondinHost) {
 		QueryHitMessage.speed_RespondinHost = speed_RespondinHost;

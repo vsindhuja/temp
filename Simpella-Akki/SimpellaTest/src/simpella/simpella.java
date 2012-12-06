@@ -212,25 +212,11 @@ class ClientHandler extends Thread{
 						String ip2 = localaddr.substring(1);
 						pongmsg.setIpAddress(ip2);
 
-						int numfiles = 0;
-						int size = 0;
-
-						if(simpella.currentPath!=null)
-						{
-							File mydir = new File(simpella.currentPath);
-							numfiles = mydir.list().length;
-							numfiles = (int) mydir.length();
-							pongmsg.setFileSharingCount(numfiles);
-							pongmsg.setKbShared(size);
-
-						}
-
-						else 
-						{
-
-							pongmsg.setFileSharingCount(0);
-							pongmsg.setKbShared(0);
-						}
+						File mydir = new File(simpella.currentPath);
+						int numfiles = mydir.list().length;
+						int size = (int) mydir.length();
+						pongmsg.setFileSharingCount(numfiles);
+						pongmsg.setKbShared(size);
 
 						System.out.println("Putting pong in PMF with PORT:"+sock.getLocalPort()+" IP:"+ip2+" No of Files:"+numfiles+" Kb:"+size);
 						byte[] pongbyte = pongmsg.toByteArray();
@@ -350,9 +336,7 @@ class ClientHandler extends Thread{
 							for(int i =0 ;i<4; i++)
 								ipaddr = ipaddr + "."+(int)(temp2[i] & 255);
 
-							ipaddr = ipaddr.substring(0,ipaddr.length()-1);
 							ipaddr = ipaddr.substring(1); 
-							System.out.println("IP Address ="+ipaddr);
 							//To turn shorts to bytes as either big endian or little endian
 
 							//ByteBuffer.wrap(tempPort).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(port);
@@ -459,31 +443,41 @@ class ClientHandler extends Thread{
 
 						String[] filelist = f.list();
 						File[] fileNames = f.listFiles();
+						int fileCount = 0;
 						for(int i=0;i<filelist.length;i++)
 						{
 							String[] mp3 = fileNames[i].getName().split("\\.");
 							String fullname = mp3[0];
-							System.out.println("File Full Name:"+fullname);
 							String[] names = fullname.split(" ");
+
 							System.out.println("Files I have : " + fileNames[i].getName() 
 									+ " Path " + fileNames[i].getAbsolutePath() + "Size : " + fileNames[i].length());
+
 							for(int j=0;j<splitArr.length;j++)
 							{
 								if(names.length>0){
 									for(int k=0;k<names.length;k++)
 									{
-										if(names[k].toLowerCase().equalsIgnoreCase((splitArr[j].toLowerCase()))) 
-										{
+										if(names[k].toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))){
 											System.out.println("Match"+fileNames[i].getName());
-											break;
+											SearchFiles sf = searchMyFiles(fileNames[i].getName());
+											QueryHitMessage qhm = new QueryHitMessage();
+											fileCount++;
+											qhm.setSearchFiles(sf);
+											qhm.setNoOfHits((byte)fileCount);
+											qhm.setAccpetingPort(simpella.dloadport);
+											qhm.setIpAddress(sock.getInetAddress().toString().substring(1).getBytes());
+											ParentMessageFormat par = new ParentMessageFormat();
+											par.setGUID(Util.generateGUID());
+											qhm.setServentID(par.guidToRawString());
 										}
 									}
-								}else
-									if(fullname.toLowerCase().equalsIgnoreCase((splitArr[j].toLowerCase()))) 
-									{
-										System.out.println("Match"+fileNames[i].getName());
-										break;
-									}
+								}
+								if(fullname.toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))) 
+								{
+									System.out.println("Match"+fileNames[i].getName());
+									fileCount++;
+								}
 							}
 						}
 
@@ -496,10 +490,22 @@ class ClientHandler extends Thread{
 			System.out.println(e.getMessage());
 		}
 	}
+	
+	public SearchFiles searchMyFiles(String fileName){
+		SearchFiles[] sf = (SearchFiles[]) simpella.myfiles.values().toArray();
+		for(int i=0;i<sf.length;i++){
+			if(sf[i].getFileName().equalsIgnoreCase(fileName))
+				return sf[i];
+		}
+		return null;
+	}
 }
 
 public class simpella {
 	static int connCount = 0;
+	
+	static int tcpport = 6346;		//Set to Default Port
+	static short dloadport = 5635;	//Set to Default Port
 
 	static Scanner scan = new Scanner(System.in);
 
@@ -509,7 +515,7 @@ public class simpella {
 
 	static HashMap<String,SearchFiles> myfiles = new HashMap<String,SearchFiles>();
 
-	static String currentPath = null;
+	static String currentPath = "/Users/akshayviswanathan/Desktop/csgrad/sindhuja/MNCProject2";
 
 	public static short[] servguid;
 
@@ -520,9 +526,14 @@ public class simpella {
 
 	@SuppressWarnings("static-access")
 	public static void main(String[] args) {
-
+		
+		if(args.length==1){
 		int tcpport = Integer.parseInt(args[0]);
+		}
+		if(args.length==2){
 		int dloadport = Integer.parseInt(args[1]);
+		}
+		
 		Util pingutil = new Util();
 		servguid = pingutil.generateGUID();
 
@@ -679,10 +690,6 @@ public class simpella {
 
 								else
 								{
-									File f = new File("");
-
-									currentPath = f.getAbsolutePath();
-									System.out.println("Curent Path"+currentPath);
 									mypath =currentPath+"/"+splitArr[1];
 									File mydir = new File(mypath);
 									if(mydir.isDirectory())
@@ -717,10 +724,6 @@ public class simpella {
 								System.out.println("sharing "+currentPath);
 							}
 
-							else{
-								System.out.println("Entered share option does not exist");
-							}
-
 						}
 						catch(ArithmeticException e)
 						{
@@ -731,20 +734,13 @@ public class simpella {
 					else if (input.startsWith("scan"))
 					{
 
-						if(currentPath!=null)
-						{
-							System.out.println("Scanning "+currentPath+" for files ...");
-							File mydir = new File(currentPath);
-							int numfiles = mydir.list().length;
-							mydir.list();
-							long size = mydir.length();
-							System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
-							Util.existingFiles = new String[numfiles];
-						}
-						else 
-						{
-							System.out.println("No shared directory exists");
-						}
+						System.out.println("scanning "+currentPath+" for files ...");
+						File mydir = new File(currentPath);
+						int numfiles = mydir.list().length;
+						mydir.list();
+						long size = mydir.length();
+						System.out.println("Scanned "+numfiles+" files and "+size+" bytes.");
+						Util.existingFiles = new String[numfiles];
 
 					}
 
@@ -806,7 +802,7 @@ public class simpella {
 								message.setTTL(7);
 								message.setHops(0);
 
-								servguid = message.getGUID();
+								servguid = message.getGUID().clone();
 
 								Socket tempClientSock ;
 
