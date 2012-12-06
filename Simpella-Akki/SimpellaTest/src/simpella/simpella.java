@@ -444,6 +444,9 @@ class ClientHandler extends Thread{
 						String[] filelist = f.list();
 						File[] fileNames = f.listFiles();
 						int fileCount = 0;
+						QueryHitMessage qhm = new QueryHitMessage();
+						ArrayList<SearchFiles> sfl = new ArrayList<SearchFiles>();
+						
 						for(int i=0;i<filelist.length;i++)
 						{
 							String[] mp3 = fileNames[i].getName().split("\\.");
@@ -461,25 +464,28 @@ class ClientHandler extends Thread{
 										if(names[k].toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))){
 											System.out.println("Match"+fileNames[i].getName());
 											SearchFiles sf = searchMyFiles(fileNames[i].getName());
-											QueryHitMessage qhm = new QueryHitMessage();
+											sfl.add(sf);
 											fileCount++;
-											qhm.setSearchFiles(sf);
-											qhm.setNoOfHits((byte)fileCount);
-											qhm.setAccpetingPort(simpella.dloadport);
-											qhm.setIpAddress(sock.getInetAddress().toString().substring(1).getBytes());
-											ParentMessageFormat par = new ParentMessageFormat();
-											par.setGUID(Util.generateGUID());
-											qhm.setServentID(par.guidToRawString());
 										}
 									}
 								}
 								if(fullname.toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))) 
 								{
 									System.out.println("Match"+fileNames[i].getName());
+									SearchFiles sf = searchMyFiles(fileNames[i].getName());
+									sfl.add(sf);
 									fileCount++;
 								}
 							}
 						}
+						SearchFiles[] search = null;
+						sfl.toArray(search);
+						
+						qhm.setSearchFiles(search);
+						qhm.setNoOfHits((byte)fileCount);
+						qhm.setAccpetingPort(simpella.dloadport);
+						qhm.setIpAddress(sock.getInetAddress().toString().substring(1).getBytes());
+						qhm.setServentID(Util.generateGUID());
 
 					}
 
@@ -711,8 +717,6 @@ public class simpella {
 								{
 									sf.setFileIndex(Util.generateFileIndex());
 									sf.setFileName(fname[i]);
-									sf.setIpAddress(myaddr);
-									sf.setPort(dloadport);
 									sf.setSize((int)f.listFiles()[i].length());
 									myfiles.put(sf.getFileIndex(), sf);
 								}
@@ -960,7 +964,7 @@ public class simpella {
 					else if(input.toLowerCase().startsWith("list")){
 						System.out.println("Files searched for");
 						for(int i=0;i<Util.listFoundFileNames.length;i++)
-							Util.listFoundFileNames[i];
+							System.out.println(Util.listFoundFileNames[i]);
 					}
 					else if(input.toLowerCase().startsWith("clear")){
 						

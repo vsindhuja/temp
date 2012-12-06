@@ -7,49 +7,49 @@ import java.nio.ByteBuffer;
 
 public class QueryHitMessage {
 
-	private static byte noOfHits;
-	private static short accpetingPort;
-	private static byte[] ipAddress = new byte[4];
-	private static int speed_RespondinHost = 10000; // Needs to be stored in Big Endian format.
-	private static byte[] serventID;
-	private static SearchFiles[] searchFiles;	
+	private  byte noOfHits;
+	private short accpetingPort;
+	private byte[] ipAddress = new byte[4];
+	private int speed_RespondinHost = 10000; // Needs to be stored in Big Endian format.
+	private short[] serventID;
+	private SearchFiles[] searchFiles;	
 	
-	public static byte[] getServentID() {
+	public short[] getServentID() {
 		return serventID;
 	}
-	public static void setServentID(byte[] serventID) {
-		QueryHitMessage.serventID = serventID;
+	public void setServentID(short[] serventID) {
+		this.serventID = serventID;
 	}
-	public static short getAccpetingPort() {
+	public short getAccpetingPort() {
 		return accpetingPort;
 	}
-	public static void setAccpetingPort(short accpetingPort) {
-		QueryHitMessage.accpetingPort = accpetingPort;
+	public void setAccpetingPort(short accpetingPort) {
+		this.accpetingPort = accpetingPort;
 	}
-	public static SearchFiles[] getSearchFiles() {
+	public SearchFiles[] getSearchFiles() {
 		return searchFiles;
 	}
-	public static void setSearchFiles(SearchFiles[] searchFiles) {
-		QueryHitMessage.searchFiles = searchFiles;
+	public void setSearchFiles(SearchFiles[] searchFiles) {
+		this.searchFiles = searchFiles;
 	}
 	
-	public static byte getNoOfHits() {
+	public byte getNoOfHits() {
 		return noOfHits;
 	}
-	public static void setNoOfHits(byte noOfHits) {
-		QueryHitMessage.noOfHits = noOfHits;
+	public void setNoOfHits(byte noOfHits) {
+		this.noOfHits = noOfHits;
 	}
-	public static byte[] getIpAddress() {
+	public byte[] getIpAddress() {
 		return ipAddress;
 	}
-	public static void setIpAddress(byte[] ipAddress) {
-		QueryHitMessage.ipAddress = ipAddress;
+	public void setIpAddress(byte[] ipAddress) {
+		this.ipAddress = ipAddress;
 	}
-	public static byte[] getSpeed_RespondinHost() {
+	public byte[] getSpeed_RespondinHost() {
 		return Util.convertIntToByteArray(speed_RespondinHost);
 	}
-	public static void setSpeed_RespondinHost(int speed_RespondinHost) {
-		QueryHitMessage.speed_RespondinHost = speed_RespondinHost;
+	public void setSpeed_RespondinHost(int speed_RespondinHost) {
+		this.speed_RespondinHost = speed_RespondinHost;
 	}
 	
 	public byte[] convertToByteArray(){
@@ -79,7 +79,7 @@ public class QueryHitMessage {
 			}
 
 			for(int i=0;i<serventID.length;i++)
-				pStream.writeByte(serventID[i]);
+				pStream.writeByte((byte)serventID[i]);
 			
 			pStream.close();
 		}
