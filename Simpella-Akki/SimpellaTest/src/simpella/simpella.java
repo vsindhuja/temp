@@ -212,9 +212,17 @@ class ClientHandler extends Thread{
 						String ip2 = localaddr.substring(1);
 						pongmsg.setIpAddress(ip2);
 
-						File mydir = new File(simpella.currentPath);
-						int numfiles = mydir.list().length;
-						int size = (int) mydir.length();
+						int numfiles =0;
+						int size =0;
+
+						if(simpella.currentPath!=null)
+						{
+							File mydir = new File(simpella.currentPath);
+							numfiles = mydir.list().length;
+							size = (int) mydir.length();
+
+						}
+
 						pongmsg.setFileSharingCount(numfiles);
 						pongmsg.setKbShared(size);
 
@@ -437,50 +445,69 @@ class ClientHandler extends Thread{
 
 						System.out.println("Query i got "+query);
 
-						String[] splitArr = query.split(" ");
-
-						File f = new File(simpella.currentPath);
-
-						String[] filelist = f.list();
-						File[] fileNames = f.listFiles();
-						int fileCount = 0;
-						for(int i=0;i<filelist.length;i++)
+						if(simpella.currentPath!=null)
 						{
-							String[] mp3 = fileNames[i].getName().split("\\.");
-							String fullname = mp3[0];
-							String[] names = fullname.split(" ");
+							String[] splitArr = query.split(" ");
 
-							System.out.println("Files I have : " + fileNames[i].getName() 
-									+ " Path " + fileNames[i].getAbsolutePath() + "Size : " + fileNames[i].length());
+							File f = new File(simpella.currentPath);
 
-							for(int j=0;j<splitArr.length;j++)
+							String[] filelist = f.list();
+							File[] fileNames = f.listFiles();
+							int fileCount = 0;
+							QueryHitMessage qhm = new QueryHitMessage();
+							ArrayList<SearchFiles> sfl = new ArrayList<SearchFiles>();
+
+							for(int i=0;i<filelist.length;i++)
 							{
-								if(names.length>0){
-									for(int k=0;k<names.length;k++)
-									{
-										if(names[k].toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))){
-											System.out.println("Match"+fileNames[i].getName());
-											SearchFiles sf = searchMyFiles(fileNames[i].getName());
-											QueryHitMessage qhm = new QueryHitMessage();
-											fileCount++;
-											qhm.setSearchFiles(sf);
-											qhm.setNoOfHits((byte)fileCount);
-											qhm.setAccpetingPort(simpella.dloadport);
-											qhm.setIpAddress(sock.getInetAddress().toString().substring(1).getBytes());
-											ParentMessageFormat par = new ParentMessageFormat();
-											par.setGUID(Util.generateGUID());
-											qhm.setServentID(par.guidToRawString());
+								String[] mp3 = fileNames[i].getName().split("\\.");
+								String fullname = mp3[0];
+								String[] names = fullname.split(" ");
+
+								System.out.println("Files I have : " + fileNames[i].getName() 
+										+ " Path " + fileNames[i].getAbsolutePath() + "Size : " + fileNames[i].length());
+
+								for(int j=0;j<splitArr.length;j++)
+								{
+									if(names.length>0){
+										for(int k=0;k<names.length;k++)
+										{
+											if(names[k].toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))){
+												System.out.println("Match"+fileNames[i].getName());
+												SearchFiles sf = searchMyFiles(fileNames[i].getName());
+												sfl.add(sf);
+												fileCount++;
+
+
+
+											}
 										}
 									}
-								}
-								if(fullname.toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))) 
-								{
-									System.out.println("Match"+fileNames[i].getName());
-									fileCount++;
+									if(fullname.toLowerCase().trim().equalsIgnoreCase((splitArr[j].toLowerCase().trim()))) 
+									{
+										System.out.println("Match"+fileNames[i].getName());
+										SearchFiles sf = searchMyFiles(fileNames[i].getName());
+										sfl.add(sf);
+										fileCount++;
+									}
 								}
 							}
-						}
 
+							SearchFiles[] search= null;
+							sfl.toArray(search);
+
+							qhm.setSearchFiles(search);
+							qhm.setNoOfHits((byte)fileCount);
+							qhm.setAccpetingPort(simpella.dloadport);
+							qhm.setIpAddress(sock.getInetAddress().toString().substring(1).getBytes());
+							ParentMessageFormat par = new ParentMessageFormat();
+							par.setGUID(Util.generateGUID());
+							qhm.setServentID(par.guidToRawString());
+
+						}
+					}
+					else
+					{
+						System.out.println("Sorry ! I do not have a shared directory");
 					}
 
 					System.out.print("Simpella>>");
@@ -490,7 +517,7 @@ class ClientHandler extends Thread{
 			System.out.println(e.getMessage());
 		}
 	}
-	
+
 	public SearchFiles searchMyFiles(String fileName){
 		SearchFiles[] sf = (SearchFiles[]) simpella.myfiles.values().toArray();
 		for(int i=0;i<sf.length;i++){
@@ -503,7 +530,7 @@ class ClientHandler extends Thread{
 
 public class simpella {
 	static int connCount = 0;
-	
+
 	static int tcpport = 6346;		//Set to Default Port
 	static short dloadport = 5635;	//Set to Default Port
 
@@ -515,7 +542,7 @@ public class simpella {
 
 	static HashMap<String,SearchFiles> myfiles = new HashMap<String,SearchFiles>();
 
-	static String currentPath = "/Users/akshayviswanathan/Desktop/csgrad/sindhuja/MNCProject2";
+	static String currentPath = null;
 
 	public static short[] servguid;
 
@@ -526,14 +553,14 @@ public class simpella {
 
 	@SuppressWarnings("static-access")
 	public static void main(String[] args) {
-		
+
 		if(args.length==1){
-		int tcpport = Integer.parseInt(args[0]);
+			int tcpport = Integer.parseInt(args[0]);
 		}
 		if(args.length==2){
-		int dloadport = Integer.parseInt(args[1]);
+			int dloadport = Integer.parseInt(args[1]);
 		}
-		
+
 		Util pingutil = new Util();
 		servguid = pingutil.generateGUID();
 
@@ -577,21 +604,34 @@ public class simpella {
 				if (scan.hasNext()) {
 					input = scan.nextLine();
 					if (input.startsWith("info")) {
-						try {
-							Socket sock = new Socket("8.8.8.8", 53);
-							System.out.println(String.format("%-20s%-30s%-10s%-10s",
-									"IP", "Hostname", "TCP port", "Download Port"));
-							System.out
-							.println("-------------------------------------------------------------------------");
-							InetAddress ipaddr = sock.getLocalAddress();
-							System.out.print((String.format("%-20s", ipaddr.toString().substring(1))));
-							System.out.print((String.format("%-30s", ipaddr
-									.getLocalHost().getHostName())));
-							System.out.print((String.format("%-10d", tcpport)));
-							System.out.println((String.format("%-10d", dloadport)));
-						} catch (IOException e) {
-							System.out.println(e.getMessage());
+						String[] splitArr = input.split(" ");
+
+						//info c
+						if(splitArr[1].equalsIgnoreCase("c"))
+						{
+							try {
+								Socket sock = new Socket("8.8.8.8", 53);
+								System.out.println(String.format("%-20s%-30s%-10s%-10s",
+										"IP", "Hostname", "TCP port", "Download Port"));
+								System.out
+								.println("-------------------------------------------------------------------------");
+								InetAddress ipaddr = sock.getLocalAddress();
+								System.out.print((String.format("%-20s", ipaddr.toString().substring(1))));
+								System.out.print((String.format("%-30s", ipaddr
+										.getLocalHost().getHostName())));
+								System.out.print((String.format("%-10d", tcpport)));
+								System.out.println((String.format("%-10d", dloadport)));
+							} catch (IOException e) {
+								System.out.println(e.getMessage());
+							}
 						}
+
+						//info d 
+						if(splitArr[1].equalsIgnoreCase("d"))
+						{
+
+						}
+
 					}
 
 					else if (input.startsWith("show")) {
@@ -690,6 +730,10 @@ public class simpella {
 
 								else
 								{
+									File f = new File("");
+
+									currentPath = f.getAbsolutePath();
+									System.out.println("Curent Path"+currentPath);
 									mypath =currentPath+"/"+splitArr[1];
 									File mydir = new File(mypath);
 									if(mydir.isDirectory())
@@ -722,6 +766,10 @@ public class simpella {
 							if(splitArr[0].equalsIgnoreCase("-i"))
 							{
 								System.out.println("sharing "+currentPath);
+							}
+
+							else{
+								System.out.println("Entered share option does not exist");
 							}
 
 						}
